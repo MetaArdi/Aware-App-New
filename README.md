@@ -9,5 +9,5 @@ Sistem AWARE menggunakan pendekatan hybrid yang menggabungkan analisis geometris
 *   **Risk Scoring**: Penggabungan cerdas antara metrik visual dan data laporan mandiri pengguna.
 
 Untuk penjelasan teknis mendalam mengenai arsitektur model, rumus perhitungan, dan logika *risk scoring*, silakan baca:
-👉 **[Dokumentasi Hybrid Fatigue Detection](docs/specs/HYBRID_MODEL_EXPLANATION.md)**
+👉 **[Dokumentasi Hybrid Fatigue Detection](MODEL_EXPLANATION.md)**
 
