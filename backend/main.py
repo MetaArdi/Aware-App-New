@@ -24,6 +24,11 @@ class PredictRequest(BaseModel):
         frames (List[str]): List of base64 encoded strings representing image frames.
     """
     frames: List[str]
+    config: dict = None
+
+class RealtimePredictRequest(BaseModel):
+    frame: str
+    config: dict = None
 
 app.add_middleware(
     CORSMiddleware,
@@ -68,9 +73,23 @@ async def predict_ml(request: PredictRequest):
     # ML-302: Menambahkan logging dasar
     start_time = time.time()
     
-    result = model_service.predict(request.frames)
+    result = model_service.predict(request.frames, config=request.config)
     
     execution_time = time.time() - start_time
     print(f"ML Predict - Frames: {len(request.frames)}, Result: {result.get('status')}, Latency: {execution_time:.3f}s")
     
     return result
+
+@app.post("/ml/predict/realtime")
+async def predict_realtime(request: RealtimePredictRequest):
+    """Lighter version of prediction for realtime feedback."""
+    # Use MediaPipe part of model_service for a single frame
+    result = model_service.predict([request.frame], config=request.config)
+    
+    # Return simplified metrics
+    return {
+        "ear": result.get("ear_avg", 0.0),
+        "mar": result.get("mar_avg", 0.0),
+        "face_detected": result.get("face_detected_count", 0) > 0,
+        "landmarks": result.get("landmarks")
+    }
