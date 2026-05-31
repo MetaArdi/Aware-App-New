@@ -1,0 +1,45 @@
+# AWARE — .gitignore
+
+# Dataset & extracted files (large, don't commit)
+dataset/
+extracted/
+*.zip
+
+# Model files (large, use releases or DVC)
+exports/
+checkpoints/
+*.keras
+*.h5
+*.tflite
+*.onnx
+saved_model/
+
+# Logs
+logs/
+*.log
+*.csv
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter (jangan dipakai di project ini)
+*.ipynb
+.ipynb_checkpoints/

@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWARE — AI-Based Workplace Fatigue Assessment</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <!-- Background Elements -->
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-eye-low-vision"></i>
+                </div>
+                <div class="brand-text">
+                    <h1>AWARE</h1>
+                    <span>Fatigue Detection</span>
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <button class="nav-btn active" data-tab="single-image">
+                    <i class="fa-regular fa-image"></i> Single Image
+                </button>
+                <button class="nav-btn" data-tab="webcam">
+                    <i class="fa-solid fa-video"></i> Live Webcam
+                </button>
+                <button class="nav-btn" data-tab="batch">
+                    <i class="fa-solid fa-folder-open"></i> Batch Process
+                </button>
+                <button class="nav-btn" data-tab="statistics">
+                    <i class="fa-solid fa-chart-simple"></i> System Stats
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="model-status-card">
+                    <div class="status-indicator">
+                        <span class="pulse-dot"></span>
+                        <span class="status-text">Model Active</span>
+                    </div>
+                    <div class="model-meta">
+                        <p class="model-name">MobileNetV2 + SE</p>
+                        <p class="model-version">v1.0.0 (Keras)</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="content-header">
+                <div class="welcome">
+                    <h2>Screening Dashboard</h2>
+                    <p>AI-Based Workplace Assessment for Readiness and Safety</p>
+                </div>
+                <div class="header-controls">
+                    <!-- Threshold Setting Slider -->
+                    <div class="threshold-slider-group">
+                        <label for="threshold-range">
+                            <span>Threshold:</span>
+                            <strong id="threshold-val">0.50</strong>
+                        </label>
+                        <input type="range" id="threshold-range" min="0.10" max="0.90" step="0.05" value="0.50">
+                    </div>
+                </div>
+            </header>
+
+            <!-- Tab: Single Image Upload -->
+            <section id="single-image-tab" class="tab-panel active">
+                <div class="grid-layout">
+                    <!-- Left: Upload Box -->
+                    <div class="card upload-card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-cloud-arrow-up"></i> Upload Media</h3>
+                            <p>Ambil atau seret foto wajah karyawan untuk mendeteksi kelelahan</p>
+                        </div>
+                        <div class="card-body">
+                            <div class="drag-drop-zone" id="drop-zone">
+                                <input type="file" id="file-input" accept="image/png, image/jpeg, image/webp" hidden>
+                                <div class="zone-content">
+                                    <i class="fa-regular fa-images zone-icon"></i>
+                                    <p class="primary-text">Tarik & Lepas gambar di sini</p>
+                                    <p class="secondary-text">atau klik untuk menelusuri file</p>
+                                    <span class="badge-info">JPEG, PNG, WEBP maks 5MB</span>
+                                </div>
+                            </div>
+                            <div class="preview-container" id="preview-container" style="display: none;">
+                                <img id="image-preview" src="" alt="Preview">
+                                <button class="btn btn-danger btn-circle remove-preview-btn" id="remove-preview-btn">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Analysis Result -->
+                    <div class="card result-card empty" id="result-card">
+                        <!-- Empty State -->
+                        <div class="empty-state" id="result-empty-state">
+                            <i class="fa-solid fa-chart-bar empty-icon"></i>
+                            <h4>Menunggu Analisis</h4>
+                            <p>Unggah gambar wajah untuk melihat hasil diagnosa kelelahan secara langsung.</p>
+                        </div>
+                        <!-- Result Content (Hidden by default) -->
+                        <div class="result-content" id="result-content" style="display: none;">
+                            <div class="card-header">
+                                <h3><i class="fa-solid fa-square-poll-horizontal"></i> Hasil Analisis</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="fit-badge-container">
+                                    <div class="fit-badge" id="fit-badge">FIT</div>
+                                    <div class="risk-badge" id="risk-badge">Low Risk</div>
+                                </div>
+
+                                <div class="metrics-grid">
+                                    <div class="metric-box">
+                                        <span class="metric-label">Fatigue Probability</span>
+                                        <div class="metric-value-group">
+                                            <span class="metric-number" id="prob-val">0.00%</span>
+                                        </div>
+                                        <div class="progress-bar-container">
+                                            <div class="progress-bar-fill" id="prob-bar" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="metric-box">
+                                        <span class="metric-label">Model Confidence</span>
+                                        <div class="metric-value-group">
+                                            <span class="metric-number" id="conf-val">0.00%</span>
+                                        </div>
+                                        <div class="progress-bar-container">
+                                            <div class="progress-bar-fill conf" id="conf-bar" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="employee-id-input-group">
+                                    <label for="employee-id"><i class="fa-regular fa-id-card"></i> ID Karyawan (Opsional)</label>
+                                    <input type="text" id="employee-id" placeholder="Contoh: EMP-2026">
+                                </div>
+
+                                <div class="action-buttons">
+                                    <button class="btn btn-primary" id="btn-submit-predict" disabled>
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i> Jalankan Analisis
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Live Webcam -->
+            <section id="webcam-tab" class="tab-panel">
+                <div class="grid-layout">
+                    <!-- Left: Camera Viewer -->
+                    <div class="card webcam-card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-camera"></i> Live Screening Camera</h3>
+                            <p>Pindai wajah secara real-time via kamera browser</p>
+                        </div>
+                        <div class="card-body webcam-wrapper">
+                            <video id="webcam-video" autoplay playsinline muted></video>
+                            <canvas id="webcam-overlay" style="display: none;"></canvas>
+                            <div class="webcam-placeholder" id="webcam-placeholder">
+                                <i class="fa-solid fa-video-slash placeholder-icon"></i>
+                                <p>Kamera belum aktif</p>
+                                <button class="btn btn-primary" id="btn-start-camera">
+                                    <i class="fa-solid fa-play"></i> Aktifkan Kamera
+                                </button>
+                            </div>
+                            <div class="webcam-hud" id="webcam-hud" style="display: none;">
+                                <div class="hud-item"><span class="label">FPS:</span> <strong id="hud-fps">0</strong></div>
+                                <div class="hud-item"><span class="label">Latency:</span> <strong id="hud-latency">0ms</strong></div>
+                            </div>
+                        </div>
+                        <div class="card-footer" style="display: flex; gap: 10px; justify-content: flex-end;">
+                            <button class="btn btn-danger" id="btn-stop-camera" style="display: none;">
+                                <i class="fa-solid fa-stop"></i> Nonaktifkan Kamera
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right: Live Result Overlay -->
+                    <div class="card live-result-card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-heart-pulse"></i> Real-time Telemetry</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="telemetry-big-status" id="live-status">
+                                <div class="status-circle" id="live-status-circle">
+                                    <i class="fa-solid fa-circle-check"></i>
+                                </div>
+                                <div class="status-texts">
+                                    <h4 id="live-fit-text">SYSTEM INACTIVE</h4>
+                                    <p id="live-risk-text">N/A Risk Level</p>
+                                </div>
+                            </div>
+
+                            <div class="live-metrics">
+                                <div class="live-metric">
+                                    <div class="label-group">
+                                        <span>Fatigue Level</span>
+                                        <span id="live-prob-percent">0%</span>
+                                    </div>
+                                    <div class="live-progress-container">
+                                        <div class="live-progress-bar" id="live-prob-bar" style="width: 0%"></div>
+                                    </div>
+                                </div>
+
+                                <div class="live-metric">
+                                    <div class="label-group">
+                                        <span>Confidence</span>
+                                        <span id="live-conf-percent">0%</span>
+                                    </div>
+                                    <div class="live-progress-container">
+                                        <div class="live-progress-bar conf" id="live-conf-bar" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="live-alerts" id="live-alerts">
+                                <div class="alert-box info-alert">
+                                    <i class="fa-solid fa-circle-info"></i>
+                                    <p>Posisikan wajah Anda tepat di depan kamera. Pastikan pencahayaan ruangan cukup terang.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Batch Process -->
+            <section id="batch-tab" class="tab-panel">
+                <div class="card">
+                    <div class="card-header batch-header-row">
+                        <div>
+                            <h3><i class="fa-solid fa-folder-tree"></i> Batch Evaluation</h3>
+                            <p>Unggah beberapa gambar sekaligus untuk dianalisis secara massal</p>
+                        </div>
+                        <div>
+                            <button class="btn btn-secondary" id="btn-export-csv" disabled>
+                                <i class="fa-solid fa-file-csv"></i> Ekspor CSV
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="batch-upload-area" id="batch-drop-zone">
+                            <input type="file" id="batch-file-input" accept="image/png, image/jpeg, image/webp" multiple hidden>
+                            <i class="fa-solid fa-images batch-icon"></i>
+                            <p>Seret beberapa gambar di sini, atau klik untuk memilih file</p>
+                            <button class="btn btn-outline" onclick="document.getElementById('batch-file-input').click()">
+                                Pilih Banyak File
+                            </button>
+                        </div>
+
+                        <!-- Progress Section -->
+                        <div class="batch-progress-section" id="batch-progress-section" style="display: none;">
+                            <div class="batch-progress-info">
+                                <span id="batch-progress-text">Memproses 0 dari 0 file...</span>
+                                <span id="batch-progress-percentage">0%</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar-fill" id="batch-progress-bar" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Results Table -->
+                        <div class="table-responsive" id="batch-table-container" style="display: none; margin-top: 25px;">
+                            <table class="batch-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nama File</th>
+                                        <th>Probabilitas Fatigue</th>
+                                        <th>Risk Level</th>
+                                        <th>Status Kesiapan</th>
+                                        <th>Confidence</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="batch-table-body">
+                                    <!-- Dynamic rows go here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Statistics & System Info -->
+            <section id="statistics-tab" class="tab-panel">
+                <div class="grid-layout cols-3">
+                    <div class="card stat-card">
+                        <div class="stat-icon alert-style"><i class="fa-solid fa-users"></i></div>
+                        <div class="stat-data">
+                            <span class="stat-label">Total Screening</span>
+                            <h3 id="stat-total">0</h3>
+                        </div>
+                    </div>
+                    <div class="card stat-card">
+                        <div class="stat-icon success-style"><i class="fa-solid fa-face-smile"></i></div>
+                        <div class="stat-data">
+                            <span class="stat-label">Karyawan FIT</span>
+                            <h3 id="stat-fit">0</h3>
+                        </div>
+                    </div>
+                    <div class="card stat-card">
+                        <div class="stat-icon danger-style"><i class="fa-solid fa-face-tired"></i></div>
+                        <div class="stat-data">
+                            <span class="stat-label">Karyawan Fatigue</span>
+                            <h3 id="stat-fatigue">0</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid-layout" style="margin-top: 20px;">
+                    <!-- Model details -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-circle-info"></i> Informasi Model & Parameter</h3>
+                        </div>
+                        <div class="card-body">
+                            <table class="info-table">
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Nama Model</strong></td>
+                                        <td>AWARE Fatigue Detection Model</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Arsitektur Backbone</strong></td>
+                                        <td>MobileNetV2 (Pre-trained on ImageNet)</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Mekanisme Attention</strong></td>
+                                        <td>Channel Attention (Squeeze-and-Excitation block)</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Ukuran Resolusi Input</strong></td>
+                                        <td>224 x 224 piksel (RGB)</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Format File Ekspor</strong></td>
+                                        <td>TensorFlow Keras (<code>.keras</code>)</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Path Model Local</strong></td>
+                                        <td><code>exports/aware_fatigue_model.keras</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Akurasi Pengujian (Test Set)</strong></td>
+                                        <td class="text-success"><strong>96.99%</strong> (Melampaui target tugas 85%)</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>F1-Score Pengujian</strong></td>
+                                        <td class="text-success"><strong>96.30%</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- System details -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-server"></i> API Backend Status</h3>
+                        </div>
+                        <div class="card-body">
+                            <table class="info-table">
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Framework API</strong></td>
+                                        <td>FastAPI (Python)</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Web Server</strong></td>
+                                        <td>Uvicorn</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Host URL</strong></td>
+                                        <td id="api-host">Loading...</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Status Kesehatan API</strong></td>
+                                        <td><span class="badge badge-success" id="api-health-badge">Loading...</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Notification system -->
+    <div class="notification-container" id="notification-container"></div>
+
+    <!-- Application Script -->
+    <script src="/static/app.js"></script>
+</body>
+</html>

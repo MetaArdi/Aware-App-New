@@ -1,0 +1,32 @@
+# requirements.txt
+# AWARE — Fatigue Detection Project
+# Install: pip install -r requirements.txt
+
+# ── Core Deep Learning ─────────────────────────────────────
+tensorflow>=2.13.0          # main framework (GPU version if available)
+# tensorflow-gpu>=2.13.0    # uncomment jika pakai GPU dan TF < 2.10
+
+# ── Computer Vision ───────────────────────────────────────
+opencv-python>=4.8.0        # webcam + image preprocessing
+mediapipe>=0.10.0           # face landmark (EAR detection)
+Pillow>=10.0.0              # image I/O utility
+
+# ── Data Science ──────────────────────────────────────────
+numpy>=1.24.0
+scikit-learn>=1.3.0         # metrics, confusion matrix
+matplotlib>=3.7.0           # visualization
+seaborn>=0.12.0             # heatmaps
+
+# ── API (optional, for backend integration) ───────────────
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6     # file upload in FastAPI
+pydantic>=2.0.0
+
+# ── Utilities ─────────────────────────────────────────────
+tqdm>=4.66.0                # progress bars
+colorlog>=6.7.0             # colored logging
+
+# ── Export / Deployment ───────────────────────────────────
+# onnx>=1.14.0              # uncomment untuk ONNX export
+# tf2onnx>=1.15.0           # TF → ONNX converter
