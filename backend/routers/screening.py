@@ -21,23 +21,6 @@ async def analyze(
     if not employee:
         raise HTTPException(status_code=404, detail="Karyawan tidak ditemukan")
 
-    # 2. Cek apakah sudah screening hari ini
-    today_start = datetime.combine(date.today(), datetime.min.time())
-    existing = db.query(ScreeningResult).filter(
-        ScreeningResult.employee_id  == req.employee_id,
-        ScreeningResult.screening_date >= today_start
-    ).first()
-
-    if existing:
-        _, _, rec = determine_status(existing.risk_score)
-        return ScreeningResponse(
-            status=existing.status,
-            risk_score=existing.risk_score,
-            fatigue_score=existing.fatigue_score,
-            message="Anda sudah melakukan screening hari ini.",
-            recommendation=rec
-        )
-
     # 3. Panggil ML server (dengan fallback otomatis jika tidak tersedia)
     ml_result     = await call_ml_predict(req.frames)
     fatigue_score = ml_result["fatigue_score"]
