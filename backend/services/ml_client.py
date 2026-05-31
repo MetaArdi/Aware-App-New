@@ -4,16 +4,20 @@ from core.config import ML_SERVER_URL
 from typing import List
 
 
-async def call_ml_predict(frames: List[str]) -> dict:
+async def call_ml_predict(frames: List[str], config: dict = None) -> dict:
     """
     Kirim frame ke ML server, kembalikan hasil prediksi.
     Fallback ke rule-based jika ML server tidak tersedia.
     """
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
+            payload = {"frames": frames}
+            if config:
+                payload["config"] = config
+                
             response = await client.post(
                 f"{ML_SERVER_URL}/predict",
-                json={"frames": frames}
+                json=payload
             )
             response.raise_for_status()
             return response.json()
@@ -30,4 +34,29 @@ async def call_ml_predict(frames: List[str]) -> dict:
             "face_detected_count": n_frames,
             "total_frames":        n_frames,
             "_fallback":           True
+        }
+
+async def call_ml_realtime(frame: str, config: dict = None) -> dict:
+    """
+    Kirim 1 frame untuk analisis realtime cepat (MediaPipe only).
+    """
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            payload = {"frame": frame}
+            if config:
+                payload["config"] = config
+                
+            response = await client.post(
+                f"{ML_SERVER_URL}/predict/realtime",
+                json=payload
+            )
+            response.raise_for_status()
+            return response.json()
+    except Exception:
+        # Fallback silent
+        return {
+            "ear": 0.3,
+            "mar": 0.1,
+            "face_detected": False,
+            "status": "fallback"
         }

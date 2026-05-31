@@ -9,3 +9,11 @@ pydantic[email]
 email-validator
 httpx
 python-dotenv
+tensorflow-cpu
+numpy
+opencv-python
+pillow
+pillow-heif
+mediapipe
+pytest
+pytest-asyncio

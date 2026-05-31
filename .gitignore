@@ -1,8 +1,11 @@
 node_modules/
 .venv/
+.venv312/
 __pycache__/
 *.pyc
 .env
 .env.production
 dist/
 build/
+test_scripts/
+aware.db

@@ -1,12 +1,34 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import List
+import time
+
 from models.database import Base, engine
 from routers import auth, screening, employees, dashboard
+from services.model_service import ModelService
+from core.config import MODEL_PATH
 
 # Buat semua tabel otomatis
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="AWARE Backend API", version="1.0.0")
+
+# Initialize Model Service
+model_service = ModelService(MODEL_PATH)
+
+class PredictRequest(BaseModel):
+    """Schema for ML prediction request.
+    
+    Attributes:
+        frames (List[str]): List of base64 encoded strings representing image frames.
+    """
+    frames: List[str]
+    config: dict = None
+
+class RealtimePredictRequest(BaseModel):
+    frame: str
+    config: dict = None
 
 app.add_middleware(
     CORSMiddleware,
@@ -34,3 +56,40 @@ def root():
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+@app.post("/ml/predict")
+async def predict_ml(request: PredictRequest):
+    """Internal ML Inference endpoint for fatigue detection.
+
+    Processes a batch of images to determine fatigue metrics. Used mainly 
+    by the /screening/analyze endpoint for integrated risk assessment.
+
+    Args:
+        request (PredictRequest): The request containing base64 images.
+
+    Returns:
+        dict: Inference results including fatigue_score and yawn status.
+    """
+    # ML-302: Menambahkan logging dasar
+    start_time = time.time()
+    
+    result = model_service.predict(request.frames, config=request.config)
+    
+    execution_time = time.time() - start_time
+    print(f"ML Predict - Frames: {len(request.frames)}, Result: {result.get('status')}, Latency: {execution_time:.3f}s")
+    
+    return result
+
+@app.post("/ml/predict/realtime")
+async def predict_realtime(request: RealtimePredictRequest):
+    """Lighter version of prediction for realtime feedback."""
+    # Use MediaPipe part of model_service for a single frame
+    result = model_service.predict([request.frame], config=request.config)
+    
+    # Return simplified metrics
+    return {
+        "ear": result.get("ear_avg", 0.0),
+        "mar": result.get("mar_avg", 0.0),
+        "face_detected": result.get("face_detected_count", 0) > 0,
+        "landmarks": result.get("landmarks")
+    }

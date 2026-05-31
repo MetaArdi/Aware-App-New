@@ -30,7 +30,9 @@ def score_from_energy(level: int) -> float:
 def calculate_risk_score(
     fatigue_score: float,
     sleep_hours:   float = 7.0,
-    energy_level:  int   = 3
+    energy_level:  int   = 3,
+    ear_avg:       float = 0.3,
+    yawn_count:    int   = 0
 ) -> float:
     cv_weight     = 0.60
     sleep_weight  = 0.25
@@ -39,12 +41,27 @@ def calculate_risk_score(
     sleep_score  = score_from_sleep(sleep_hours)
     energy_score = score_from_energy(energy_level)
 
+    # Base risk calculation
     risk = (
         cv_weight     * fatigue_score +
         sleep_weight  * sleep_score   +
         energy_weight * energy_score
     )
-    return round(min(risk, 1.0), 4)
+
+    # Hybrid Enhancements (MediaPipe Analysis)
+    # 1. EAR Penalty: If eyes are significantly closed (EAR < 0.22)
+    if ear_avg < 0.22 and ear_avg > 0:
+        risk += 0.20 # Push risk significantly higher
+    
+    # 2. Yawn Penalty: Detectable yawn is a strong indicator
+    # penalty increases with yawn intensity/count
+    if yawn_count > 0:
+        # 1-3 frames of yawn is a warning (+0.1), more is severe (+0.2)
+        penalty = 0.1 if yawn_count < 5 else 0.2
+        risk += penalty
+
+    # Ensure risk is in range [0.0, 1.0]
+    return round(max(0.0, min(risk, 1.0)), 4)
 
 
 def determine_status(risk_score: float) -> tuple:

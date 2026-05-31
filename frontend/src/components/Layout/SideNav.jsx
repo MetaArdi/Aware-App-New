@@ -11,7 +11,19 @@ const NAV_ITEMS = [
 export default function SideNav({ userName, subLabel }) {
   const navigate   = useNavigate()
   const location   = useLocation()
-  const { logout } = useAuth()
+  const { logout, user } = useAuth()
+
+  // Sembunyikan Dashboard jika bukan admin/supervisor, sembunyikan Screening jika bukan employee
+  const items = NAV_ITEMS.filter(item => {
+    if (item.path === '/dashboard' && !['admin', 'supervisor'].includes(user?.role)) return false
+    if (item.path === '/screening' && user?.role !== 'employee') return false
+    return true
+  })
+
+  // Tambahkan menu ML Sandbox jika admin
+  if (user?.role === 'admin') {
+    items.push({ icon: 'terminal', label: 'ML Sandbox', path: '/ml-sandbox' })
+  }
 
   return (
     <aside className="fixed left-0 top-0 h-full hidden lg:flex flex-col py-lg gap-sm
@@ -22,7 +34,7 @@ export default function SideNav({ userName, subLabel }) {
       </div>
 
       <nav className="flex-1 space-y-1">
-        {NAV_ITEMS.map(item => {
+        {items.map(item => {
           const isActive = location.pathname === item.path
           return (
             <button

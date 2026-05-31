@@ -54,12 +54,19 @@ const STATUS_DATA = {
 export default function ResultPage({ result, onRestart }) {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const d        = STATUS_DATA[result?.status] || STATUS_DATA.at_risk
+  
+  // Backend returns status: "fit" | "at_risk" | "not_fit"
+  const currentStatus = result?.status || 'at_risk'
+  const d = STATUS_DATA[currentStatus] || STATUS_DATA.at_risk
 
-  // Gunakan risk_score dari API untuk skor aktual
+  // Score Kesiapan (100 - risk_score*100)
   const actualScore = result?.risk_score != null
     ? Math.round((1 - result.risk_score) * 100)
-    : d.score
+    : 70
+
+  const fatigueScorePercent = result?.fatigue_score != null
+    ? Math.round(result.fatigue_score * 100)
+    : 0
 
   const now = new Date().toLocaleString('id-ID', {
     day: '2-digit', month: 'short', year: 'numeric',
@@ -129,38 +136,48 @@ export default function ResultPage({ result, onRestart }) {
                     </div>
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-md text-center mt-lg">
+                <div className="grid grid-cols-5 gap-md text-center mt-lg">
                   <div className="p-sm">
-                    <p className="text-label-md text-on-surface-variant mb-xs">Kognitif</p>
-                    <p className="text-headline-md font-bold text-primary">{d.kognitif}</p>
+                    <p className="text-[10px] text-on-surface-variant mb-xs uppercase">Fatigue (AI)</p>
+                    <p className="text-xl font-bold text-primary">{fatigueScorePercent}%</p>
                   </div>
-                  <div className="p-sm border-x border-outline-variant">
-                    <p className="text-label-md text-on-surface-variant mb-xs">Kardio</p>
-                    <p className="text-headline-md font-bold text-primary">{d.kardio}</p>
+                  <div className="p-sm border-l border-outline-variant">
+                    <p className="text-[10px] text-on-surface-variant mb-xs uppercase">Yawn</p>
+                    <p className="text-xl font-bold text-primary">{result?.yawn_count || 0}</p>
                   </div>
-                  <div className="p-sm">
-                    <p className="text-label-md text-on-surface-variant mb-xs">Stres</p>
-                    <p className={`text-headline-md font-bold ${d.stresColor}`}>{d.stres}</p>
+                  <div className="p-sm border-l border-outline-variant">
+                    <p className="text-[10px] text-on-surface-variant mb-xs uppercase">Sleep</p>
+                    <p className="text-xl font-bold text-primary">{result?.sleep_hours || 0}h</p>
+                  </div>
+                  <div className="p-sm border-l border-outline-variant">
+                    <p className="text-[10px] text-on-surface-variant mb-xs uppercase">Energy</p>
+                    <p className="text-xl font-bold text-primary">{result?.energy_level || 0}/5</p>
+                  </div>
+                  <div className="p-sm border-l border-outline-variant">
+                    <p className="text-[10px] text-on-surface-variant mb-xs uppercase">EAR Avg</p>
+                    <p className="text-xl font-bold text-primary">{result?.ear_avg?.toFixed(2) || '0.30'}</p>
                   </div>
                 </div>
               </div>
 
               {/* AI Insight */}
-              <div className="md:col-span-5 bg-primary text-on-primary rounded-xl p-lg relative overflow-hidden">
+              <div className="md:col-span-5 bg-primary text-on-primary rounded-xl p-lg relative overflow-hidden flex flex-col justify-center">
                 <div className="absolute top-0 right-0 p-lg opacity-10">
-                  <span className="material-symbols-outlined" style={{ fontSize: '120px' }}>psychology</span>
+                  <span className="material-symbols-outlined" style={{ fontSize: '100px' }}>psychology</span>
                 </div>
                 <div className="relative z-10">
-                  <div className="flex items-center gap-xs mb-md">
+                  <div className="flex items-center gap-xs mb-sm">
                     <span
-                      className="material-symbols-outlined"
+                      className="material-symbols-outlined text-sm"
                       style={{ color: '#39b8fd', fontVariationSettings: "'FILL' 1" }}
                     >auto_awesome</span>
-                    <span className="text-label-md font-bold uppercase tracking-widest" style={{ color: '#39b8fd' }}>
+                    <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#39b8fd' }}>
                       AI Insight
                     </span>
                   </div>
-                  <p className="text-body-md leading-relaxed">{d.aiInsight}</p>
+                  <p className="text-body-sm leading-relaxed whitespace-pre-line italic">
+                    "{result?.recommendation || d.aiInsight}"
+                  </p>
                 </div>
               </div>
             </div>
@@ -171,10 +188,10 @@ export default function ResultPage({ result, onRestart }) {
                 <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>
                   clinical_notes
                 </span>
-                <h3 className="text-headline-md font-bold text-primary">Rekomendasi Kesehatan</h3>
+                <h3 className="text-headline-md font-bold text-primary">Panduan Mitigasi</h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
-                {d.recommendations.map((rec, i) => (
+                {(result?.status === 'not_fit' ? STATUS_DATA.not_fit : STATUS_DATA.fit).recommendations.map((rec, i) => (
                   <div key={i} className="bg-surface-container-lowest p-md rounded-lg border border-outline-variant flex gap-md">
                     <div className="w-12 h-12 rounded-lg bg-secondary-container/20 flex items-center justify-center shrink-0">
                       <span className="material-symbols-outlined text-secondary">{rec.icon}</span>
