@@ -1,0 +1,73 @@
+2026-05-18 07:33:10  INFO      __main__ — =======================================================
+2026-05-18 07:33:10  INFO      __main__ —   AWARE — Fatigue Detection System
+2026-05-18 07:33:10  INFO      __main__ —   Team CC26-PRU440 | Coding Camp 2026
+2026-05-18 07:33:10  INFO      __main__ — =======================================================
+2026-05-18 07:33:10  INFO      src.utils — Project directories ensured ✓
+2026-05-18 07:33:10  WARNING   tensorflow — TensorFlow GPU support is not available on native Windows for TensorFlow >= 2.11. Even if CUDA/cuDNN are installed, GPU will not be used. Please use WSL2 or the TensorFlow-DirectML plugin.
+2026-05-18 07:33:10  INFO      src.utils — Tidak ada GPU terdeteksi — menggunakan CPU.
+2026-05-18 07:33:10  INFO      __main__ —   Running on: CPU
+2026-05-18 07:33:10  INFO      src.dataset — Mengekstrak C:\Users\dzikri\Downloads\aware-project\aware-project\_output_.zip → C:\Users\dzikri\Downloads\aware-project\aware-project\extracted ...
+2026-05-18 07:41:42  INFO      src.dataset — Ekstraksi selesai.
+2026-05-18 07:41:59  INFO      src.dataset — =======================================================
+2026-05-18 07:41:59  INFO      src.dataset —   DATASET INSPECTION REPORT
+2026-05-18 07:41:59  INFO      src.dataset — =======================================================
+2026-05-18 07:41:59  INFO      src.dataset —   Root      : C:\Users\dzikri\Downloads\aware-project\aware-project\extracted
+2026-05-18 07:41:59  INFO      src.dataset —   Total     : 170,500 images
+2026-05-18 07:41:59  INFO      src.dataset —   Classes   : ['drowsy', 'extracted', 'no_yawning', 'non_drowsy', 'yawning']
+2026-05-18 07:41:59  INFO      src.dataset —     no_yawning           66,591  (39.1%)
+2026-05-18 07:41:59  INFO      src.dataset —     drowsy               44,696  (26.2%)
+2026-05-18 07:41:59  INFO      src.dataset —     non_drowsy           38,890  (22.8%)
+2026-05-18 07:41:59  INFO      src.dataset —     yawning              20,316  (11.9%)
+2026-05-18 07:41:59  INFO      src.dataset —     extracted                 7  (0.0%)
+2026-05-18 07:41:59  WARNING   src.dataset —   ⚠ Imbalance ratio = 9513.0x  → class weighting akan diterapkan
+2026-05-18 07:41:59  INFO      src.dataset — =======================================================
+2026-05-18 07:41:59  INFO      __main__ — 
+✅  AWARE pipeline selesai.
+2026-05-18 07:43:20  INFO      __main__ — =======================================================
+2026-05-18 07:43:20  INFO      __main__ —   AWARE — Fatigue Detection System
+2026-05-18 07:43:20  INFO      __main__ —   Team CC26-PRU440 | Coding Camp 2026
+2026-05-18 07:43:20  INFO      __main__ — =======================================================
+2026-05-18 07:43:20  INFO      src.utils — Project directories ensured ✓
+2026-05-18 07:43:20  WARNING   tensorflow — TensorFlow GPU support is not available on native Windows for TensorFlow >= 2.11. Even if CUDA/cuDNN are installed, GPU will not be used. Please use WSL2 or the TensorFlow-DirectML plugin.
+2026-05-18 07:43:20  INFO      src.utils — Tidak ada GPU terdeteksi — menggunakan CPU.
+2026-05-18 07:43:20  INFO      __main__ —   Running on: CPU
+2026-05-18 07:43:20  INFO      src.dataset — Dataset sudah diekstrak di: C:\Users\dzikri\Downloads\aware-project\aware-project\extracted  (pakai force=True untuk re-extract)
+2026-05-18 07:43:20  INFO      src.dataset — Menggunakan subfolder: C:\Users\dzikri\Downloads\aware-project\aware-project\extracted\final_dataset
+2026-05-18 07:43:22  INFO      src.dataset — =======================================================
+2026-05-18 07:43:22  INFO      src.dataset —   DATASET INSPECTION REPORT
+2026-05-18 07:43:22  INFO      src.dataset — =======================================================
+2026-05-18 07:43:22  INFO      src.dataset —   Root      : C:\Users\dzikri\Downloads\aware-project\aware-project\extracted\final_dataset
+2026-05-18 07:43:22  INFO      src.dataset —   Total     : 70,762 images
+2026-05-18 07:43:22  INFO      src.dataset —   Classes   : ['drowsy', 'no_yawning', 'non_drowsy', 'yawning']
+2026-05-18 07:43:22  INFO      src.dataset —     drowsy               22,348  (31.6%)
+2026-05-18 07:43:22  INFO      src.dataset —     no_yawning           22,197  (31.4%)
+2026-05-18 07:43:22  INFO      src.dataset —     non_drowsy           19,445  (27.5%)
+2026-05-18 07:43:22  INFO      src.dataset —     yawning               6,772  (9.6%)
+2026-05-18 07:43:22  WARNING   src.dataset —   ⚠ Imbalance ratio = 3.3x  → class weighting akan diterapkan
+2026-05-18 07:43:22  INFO      src.dataset — =======================================================
+2026-05-18 07:43:22  INFO      __main__ — 
+✅  AWARE pipeline selesai.
+2026-05-19 00:17:02  INFO      __main__ — =======================================================
+2026-05-19 00:17:02  INFO      __main__ —   AWARE — Fatigue Detection System
+2026-05-19 00:17:02  INFO      __main__ —   Team CC26-PRU440 | Coding Camp 2026
+2026-05-19 00:17:02  INFO      __main__ — =======================================================
+2026-05-19 00:17:02  INFO      src.utils — Project directories ensured ✓
+2026-05-19 00:17:02  WARNING   tensorflow — TensorFlow GPU support is not available on native Windows for TensorFlow >= 2.11. Even if CUDA/cuDNN are installed, GPU will not be used. Please use WSL2 or the TensorFlow-DirectML plugin.
+2026-05-19 00:17:02  INFO      src.utils — Tidak ada GPU terdeteksi — menggunakan CPU.
+2026-05-19 00:17:02  INFO      __main__ —   Running on: CPU
+2026-05-19 00:17:02  INFO      src.dataset — Dataset sudah diekstrak di: C:\Users\dzikri\Downloads\aware-project\aware-project\extracted  (pakai force=True untuk re-extract)
+2026-05-19 00:17:02  INFO      src.dataset — Menggunakan subfolder: C:\Users\dzikri\Downloads\aware-project\aware-project\extracted\final_dataset
+2026-05-19 00:17:08  INFO      src.dataset — =======================================================
+2026-05-19 00:17:08  INFO      src.dataset —   DATASET INSPECTION REPORT
+2026-05-19 00:17:08  INFO      src.dataset — =======================================================
+2026-05-19 00:17:08  INFO      src.dataset —   Root      : C:\Users\dzikri\Downloads\aware-project\aware-project\extracted\final_dataset
+2026-05-19 00:17:08  INFO      src.dataset —   Total     : 70,762 images
+2026-05-19 00:17:08  INFO      src.dataset —   Classes   : ['drowsy', 'no_yawning', 'non_drowsy', 'yawning']
+2026-05-19 00:17:08  INFO      src.dataset —     drowsy               22,348  (31.6%)
+2026-05-19 00:17:08  INFO      src.dataset —     no_yawning           22,197  (31.4%)
+2026-05-19 00:17:08  INFO      src.dataset —     non_drowsy           19,445  (27.5%)
+2026-05-19 00:17:08  INFO      src.dataset —     yawning               6,772  (9.6%)
+2026-05-19 00:17:08  WARNING   src.dataset —   ⚠ Imbalance ratio = 3.3x  → class weighting akan diterapkan
+2026-05-19 00:17:08  INFO      src.dataset — =======================================================
+2026-05-19 00:17:08  INFO      __main__ — 
+✅  AWARE pipeline selesai.
