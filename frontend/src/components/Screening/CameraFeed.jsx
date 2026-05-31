@@ -1,8 +1,8 @@
 import { useRef, useEffect, useState, useCallback } from 'react'
 import { Camera, AlertCircle } from 'lucide-react'
 
-const CAPTURE_INTERVAL_MS = 3000
-const SCREENING_DURATION  = 30
+const CAPTURE_INTERVAL_MS = 500
+const SCREENING_DURATION  = 15
 
 export default function CameraFeed({ onComplete }) {
   const videoRef    = useRef(null)

@@ -6,40 +6,67 @@ import ResultPage       from '../components/Screening/ResultPage'
 import SelfReportForm   from '../components/Screening/SelfReportForm'
 import api              from '../api/axios'
 
-const CAPTURE_INTERVAL_MS = 3000
-const SCREENING_DURATION  = 30
+const CAPTURE_INTERVAL_MS = 500
+const SCREENING_DURATION  = 15
 const DEFAULT_SELF_REPORT = { sleep_hours: 7, energy_level: 3, physical_complaints: '' }
 
 export default function Screening() {
   const { user }        = useAuth()
   const videoRef        = useRef(null)
+  const canvasRef       = useRef(null)
   const streamRef       = useRef(null)
   const intervalRef     = useRef(null)
   const timerRef        = useRef(null)
   const framesRef       = useRef([])
+  const phaseRef        = useRef('prepare')
 
   const [phase, setPhase]           = useState('prepare')
   const [countdown, setCountdown]   = useState(SCREENING_DURATION)
-  const [frames, setFrames]         = useState([])
+  const [frameCount, setFrameCount] = useState(0)
   const [selfReport, setSelfReport] = useState(DEFAULT_SELF_REPORT)
   const [error, setError]           = useState('')
   const [result, setResult]         = useState(null)
+  const [realtimeMetrics, setRealtimeMetrics] = useState({
+    ear: 0.3,
+    mar: 0,
+    face_detected: false,
+    landmarks: null,
+    yawn_count: 0
+  })
 
-  useEffect(() => { framesRef.current = frames }, [frames])
+  const updatePhase = (newPhase) => {
+    setPhase(newPhase)
+    phaseRef.current = newPhase
+  }
 
-  const captureFrame = useCallback(() => {
+  const captureFrame = useCallback(async () => {
     const video = videoRef.current
     if (!video || video.readyState < 2) return
     const canvas  = document.createElement('canvas')
     canvas.width  = video.videoWidth  || 640
     canvas.height = video.videoHeight || 480
-    canvas.getContext('2d').drawImage(video, 0, 0)
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.7)
-    setFrames(prev => {
-      const next = [...prev, dataUrl]
-      framesRef.current = next
-      return next
-    })
+    const ctx = canvas.getContext('2d')
+    ctx.drawImage(video, 0, 0)
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.6)
+    
+    // Accumulate frames only during scanning
+    if (phaseRef.current === 'scanning') {
+      framesRef.current.push(dataUrl)
+      setFrameCount(framesRef.current.length)
+    }
+
+    // Real-time analysis for landmarks and bars
+    try {
+      const res = await api.post('/screening/realtime', {
+        frame: dataUrl
+      })
+      setRealtimeMetrics(prev => ({
+        ...res.data,
+        yawn_count: prev.yawn_count // yawn_count comes from final analysis, but we can show it if we want
+      }))
+    } catch (e) {
+      // Silent error
+    }
   }, [])
 
   const stopCamera = useCallback(() => {
@@ -50,7 +77,7 @@ export default function Screening() {
   }, [])
 
   const submitScreening = useCallback(async (capturedFrames, report) => {
-    setPhase('analyzing')
+    updatePhase('analyzing')
     try {
       const res = await api.post('/screening/analyze', {
         employee_id: user.employee_id,
@@ -60,36 +87,42 @@ export default function Screening() {
       setResult(res.data)
     } catch (e) {
       setError(e.response?.data?.detail || 'Terjadi kesalahan saat analisis.')
-      setPhase('prepare')
+      updatePhase('prepare')
     }
   }, [user])
 
   const startCamera = async () => {
     setError('')
-    setFrames([])
     framesRef.current = []
+    setFrameCount(0)
     setCountdown(SCREENING_DURATION)
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: 640, height: 480, facingMode: 'user' }
       })
       streamRef.current = stream
-      videoRef.current.srcObject = stream
-      await new Promise((resolve) => {
-        videoRef.current.onloadedmetadata = resolve
-        setTimeout(resolve, 3000)
-      })
-      await videoRef.current.play()
-      setPhase('scanning')
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+        await new Promise((resolve) => {
+          videoRef.current.onloadedmetadata = resolve
+          setTimeout(resolve, 3000)
+        })
+        await videoRef.current.play()
+      }
+      
+      updatePhase('scanning')
+      
+      // Real-time loop
+      if (intervalRef.current) clearInterval(intervalRef.current)
       intervalRef.current = setInterval(captureFrame, CAPTURE_INTERVAL_MS)
+
       let remaining = SCREENING_DURATION
       timerRef.current = setInterval(() => {
         remaining -= 1
         setCountdown(remaining)
         if (remaining <= 0) {
           clearInterval(timerRef.current)
-          clearInterval(intervalRef.current)
-          stopCamera()
+          // We keep intervalRef running so landmarks stay visible until analysis starts/ends
           submitScreening(framesRef.current, selfReport)
         }
       }, 1000)
@@ -106,15 +139,62 @@ export default function Screening() {
 
   const cancelScreening = () => {
     stopCamera()
-    setFrames([])
     framesRef.current = []
+    setFrameCount(0)
     setCountdown(SCREENING_DURATION)
-    setPhase('prepare')
+    updatePhase('prepare')
   }
 
   useEffect(() => () => stopCamera(), [stopCamera])
 
-  if (result) return <ResultPage result={result} onRestart={() => { setResult(null); setPhase('prepare') }} />
+  // Real-time Face Mesh Visualization
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    if (!canvas || !video || video.readyState < 2) return;
+
+    const ctx = canvas.getContext('2d');
+    
+    if (realtimeMetrics.landmarks && phase === 'scanning') {
+      canvas.width = video.clientWidth;
+      canvas.height = video.clientHeight;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Calculate mapping for object-cover
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
+      const cw = canvas.width;
+      const ch = canvas.height;
+      const vRatio = vw / vh;
+      const cRatio = cw / ch;
+
+      let renderW, renderH, offsetX, offsetY;
+      if (vRatio > cRatio) {
+        renderH = ch;
+        renderW = ch * vRatio;
+        offsetX = (cw - renderW) / 2;
+        offsetY = 0;
+      } else {
+        renderW = cw;
+        renderH = cw / vRatio;
+        offsetX = 0;
+        offsetY = (ch - renderH) / 2;
+      }
+
+      ctx.fillStyle = '#39b8fd';
+      realtimeMetrics.landmarks.forEach(lm => {
+        const x = lm.x * renderW + offsetX;
+        const y = lm.y * renderH + offsetY;
+        ctx.beginPath();
+        ctx.arc(x, y, 1.2, 0, 2 * Math.PI);
+        ctx.fill();
+      });
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  }, [realtimeMetrics.landmarks, phase]);
+
+  if (result) return <ResultPage result={result} onRestart={() => { setResult(null); updatePhase('prepare') }} />
 
   return (
     <div className="bg-background text-on-background font-body-md">
@@ -140,7 +220,7 @@ export default function Screening() {
                   <SelfReportForm data={selfReport} onChange={setSelfReport} />
                   <div className="flex gap-md mt-lg">
                     <button
-                      onClick={() => setPhase('prepare')}
+                      onClick={() => updatePhase('prepare')}
                       className="flex-1 py-sm border-2 border-outline-variant text-on-surface-variant
                                  rounded-lg font-bold hover:bg-surface-container-high transition-all text-label-md"
                     >
@@ -172,38 +252,71 @@ export default function Screening() {
                 <div className="bg-surface-container-lowest border border-outline-variant p-lg rounded-xl shadow-sm">
                   <h3 className="text-label-md text-secondary uppercase tracking-widest mb-md">Metrik Real-time</h3>
                   <div className="space-y-lg">
+                    {/* EAR */}
                     <div className="flex flex-col gap-xs">
                       <div className="flex justify-between items-center">
                         <span className="text-body-sm text-on-surface-variant flex items-center gap-xs">
                           <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>visibility</span>
-                          EAR (Eye Aspect Ratio)
+                          EAR (Mata)
                         </span>
-                        <span className="text-label-md font-bold text-secondary">0.32</span>
+                        <span className={`text-label-md font-bold ${realtimeMetrics.ear < 0.22 ? 'text-error' : 'text-secondary'}`}>
+                          {realtimeMetrics.ear.toFixed(2)}
+                        </span>
                       </div>
                       <div className="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
-                        <div className="bg-secondary h-full" style={{ width: '72%' }} />
+                        <div 
+                          className={`h-full transition-all duration-300 ${realtimeMetrics.ear < 0.22 ? 'bg-error' : 'bg-secondary'}`} 
+                          style={{ width: `${Math.min(realtimeMetrics.ear * 200, 100)}%` }} 
+                        />
                       </div>
                     </div>
+
+                    {/* MAR */}
                     <div className="flex flex-col gap-xs">
                       <div className="flex justify-between items-center">
                         <span className="text-body-sm text-on-surface-variant flex items-center gap-xs">
-                          <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>face</span>
-                          Yawn Detection
+                          <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>sentiment_satisfied</span>
+                          MAR (Mulut)
                         </span>
-                        <span className="text-label-md font-bold text-error">TIDAK TERDETEKSI</span>
+                        <span className={`text-label-md font-bold ${realtimeMetrics.mar > 0.35 ? 'text-error' : 'text-secondary'}`}>
+                          {realtimeMetrics.mar.toFixed(2)}
+                        </span>
                       </div>
                       <div className="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
-                        <div className="bg-error h-full" style={{ width: '15%' }} />
+                        <div 
+                          className={`h-full transition-all duration-300 ${realtimeMetrics.mar > 0.35 ? 'bg-error' : 'bg-secondary'}`} 
+                          style={{ width: `${Math.min(realtimeMetrics.mar * 150, 100)}%` }} 
+                        />
                       </div>
                     </div>
+
+                    {/* Yawn Count & Face Detection */}
+                    <div className="grid grid-cols-2 gap-md pt-xs">
+                      <div className="bg-surface-container-high p-sm rounded-lg text-center">
+                        <p className="text-[10px] text-on-surface-variant uppercase tracking-tighter">Yawn Detected</p>
+                        <p className={`text-headline-sm font-bold ${realtimeMetrics.yawn_count > 0 ? 'text-error' : 'text-secondary'}`}>
+                          {realtimeMetrics.yawn_count}
+                        </p>
+                      </div>
+                      <div className="bg-surface-container-high p-sm rounded-lg text-center">
+                        <p className="text-[10px] text-on-surface-variant uppercase tracking-tighter">Face Status</p>
+                        <div className="flex items-center justify-center gap-xs mt-xs">
+                          <div className={`w-2 h-2 rounded-full animate-pulse ${realtimeMetrics.face_detected ? 'bg-secondary' : 'bg-error'}`} />
+                          <p className={`text-label-sm font-bold ${realtimeMetrics.face_detected ? 'text-secondary' : 'text-error'}`}>
+                            {realtimeMetrics.face_detected ? 'READY' : 'LOST'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
                   </div>
                 </div>
               )}
 
               {phase === 'scanning' && (
                 <div className="bg-surface-container-lowest border border-outline-variant p-md rounded-xl text-center">
-                  <p className="text-label-md text-on-surface-variant mb-xs">Frame Tertangkap</p>
-                  <p className="text-headline-md font-bold text-secondary">{frames.length}</p>
+                  <p className="text-label-md text-on-surface-variant mb-xs">Frame Berhasil Diproses</p>
+                  <p className="text-headline-md font-bold text-secondary">{frameCount}</p>
                 </div>
               )}
             </div>
@@ -211,7 +324,7 @@ export default function Screening() {
             {/* Center: Kamera — SELALU di DOM */}
             <div className="col-span-12 lg:col-span-6 order-1 lg:order-2">
               <div
-                className="relative w-full bg-primary-container rounded-3xl overflow-hidden shadow-lg border border-primary"
+                className="relative w-full bg-[#0a1628] rounded-3xl overflow-hidden shadow-lg border border-primary/30"
                 style={{ aspectRatio: '4/5' }}
               >
                 {/* video SELALU rendered agar videoRef tidak null */}
@@ -223,12 +336,19 @@ export default function Screening() {
                   className="w-full h-full object-cover"
                   style={{
                     transform: 'scaleX(-1)',
-                    display: phase === 'scanning' ? 'block' : 'none'
+                    display: phase === 'scanning' || phase === 'analyzing' || phase === 'streaming' ? 'block' : 'none'
                   }}
                 />
 
+                {/* Canvas for Landmarks Overlay */}
+                <canvas 
+                  ref={canvasRef}
+                  className="absolute inset-0 w-full h-full pointer-events-none z-10"
+                  style={{ transform: 'scaleX(-1)' }}
+                />
+
                 {/* Placeholder gelap saat kamera belum aktif */}
-                {phase !== 'scanning' && (
+                {phase !== 'scanning' && phase !== 'analyzing' && phase !== 'streaming' && (
                   <div className="absolute inset-0 bg-[#0a1628] flex items-center justify-center">
                     <span className="material-symbols-outlined text-outline" style={{ fontSize: '64px' }}>
                       videocam_off
@@ -237,14 +357,14 @@ export default function Screening() {
                 )}
 
                 {/* Face frame overlay */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
                   <div
-                    className="border-2 rounded-[40px]"
+                    className="border-2 rounded-[40px] transition-all duration-500"
                     style={{
-                      borderColor: '#39b8fd',
+                      borderColor: realtimeMetrics.face_detected ? '#00E676' : '#39b8fd',
                       boxShadow: '0 0 0 2000px rgba(9,20,38,0.75)',
-                      width: '50%',
-                      height: '60%',
+                      width: '55%',
+                      height: '65%',
                     }}
                   />
                 </div>

@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import Login          from './pages/Login'
 import Screening      from './pages/Screening'
+import MLSandbox      from './pages/MLSandbox'
 import Dashboard      from './pages/Dashboard'
 import EmployeeDetail from './pages/EmployeeDetail'
 import HealthLogs     from './pages/HealthLogs'    // buat file ini
@@ -47,6 +48,11 @@ function AppRoutes() {
       <Route path="/settings" element={
         <ProtectedRoute>
           <Settings />
+        </ProtectedRoute>
+      } />
+      <Route path="/ml-sandbox" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <MLSandbox />
         </ProtectedRoute>
       } />
       <Route path="/" element={<Navigate to="/login" replace />} />
