@@ -24,16 +24,35 @@ class SelfReport(BaseModel):
     physical_complaints: Optional[str] = None
 
 
+class ScreeningConfig(BaseModel):
+    use_cnn: bool = True
+    use_mediapipe: bool = True
+class RealtimeScreeningRequest(BaseModel):
+    frame: str # base64
+    config: Optional[ScreeningConfig] = None
+
+class RealtimeScreeningResponse(BaseModel):
+    ear: float
+    mar: float
+    face_detected: bool
+    landmarks: Optional[List[dict]] = None
 class ScreeningRequest(BaseModel):
     employee_id: int
     frames: List[str]           # base64 images
     self_report: SelfReport
+    config: Optional[ScreeningConfig] = None
 
 
 class ScreeningResponse(BaseModel):
     status: str                 # fit | at_risk | not_fit
     risk_score: float
     fatigue_score: float
+    ear_avg: Optional[float] = None
+    mar_avg: Optional[float] = None
+    face_detected_count: Optional[int] = 0
+    yawn_count: Optional[int] = 0
+    sleep_hours: Optional[float] = 0
+    energy_level: Optional[int] = 0
     message: str
     recommendation: str
 

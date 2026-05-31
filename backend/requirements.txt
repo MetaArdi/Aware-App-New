@@ -14,5 +14,6 @@ numpy
 opencv-python
 pillow
 pillow-heif
+mediapipe
 pytest
 pytest-asyncio
