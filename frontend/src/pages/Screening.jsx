@@ -197,17 +197,11 @@ export default function Screening() {
   if (result) return <ResultPage result={result} onRestart={() => { setResult(null); updatePhase('prepare') }} />
 
   return (
-    <div className="bg-background text-on-background font-body-md">
-      <TopBar title="AWARE" tabs={[
-        { label: 'Assessment', active: true },
-        { label: 'Dashboard',  active: false },
-        { label: 'Health Logs', active: false },
-      ]} />
-
+    <div className="bg-background text-on-background font-body-md min-h-screen">
       <div className="flex">
         <SideNav userName={user?.name} subLabel={user?.division} />
 
-        <main className="lg:ml-64 pt-[64px] min-h-screen px-margin-mobile md:px-margin-desktop pb-xl w-full">
+        <main className="lg:ml-64 flex-1 p-margin-mobile md:p-margin-desktop pb-xl w-full">
           <div className="max-w-6xl mx-auto grid grid-cols-12 gap-lg mt-md">
 
             {/* Left */}

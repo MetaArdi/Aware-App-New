@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth }     from '../context/AuthContext'
 import SideNav         from '../components/Layout/SideNav'
+import TopBar          from '../components/Layout/TopBar'
 import api             from '../api/axios'
 
 export default function Dashboard() {
@@ -64,48 +65,30 @@ export default function Dashboard() {
   const chartData = activeChart === 'Mingguan' ? weeklyData : monthlyData
 
   return (
-    <div className="text-on-background">
-      <SideNav userName={user?.name} subLabel="Industrial Safety" />
+    <div className="text-on-background bg-background min-h-screen">
+      <SideNav userName={user?.name} subLabel={user?.division} />
 
       <div className="lg:ml-64 flex flex-col min-h-screen">
-        {/* TopBar */}
-        <header className="bg-surface-container-low text-primary flex justify-between items-center
-                            w-full px-margin-mobile md:px-margin-desktop py-sm z-50
-                            border-b border-outline-variant sticky top-0">
-          <div className="flex items-center gap-md">
-            <span className="lg:hidden material-symbols-outlined cursor-pointer">menu</span>
-            <h2 className="text-headline-md font-bold tracking-tight text-primary lg:hidden">DASHBOARD</h2>
-            <h2 className="text-headline-md font-bold tracking-tight text-primary hidden lg:block">DASHBOARD SUPERVISOR</h2>
-          </div>
-          <div className="flex items-center gap-lg">
-            <div className="hidden md:flex gap-md">
+        <header className="px-margin-mobile md:px-margin-desktop py-lg border-b border-outline-variant">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-md">
+            <div>
+              <h1 className="text-headline-lg font-bold text-primary">DASHBOARD SUPERVISOR</h1>
+              <p className="text-body-sm text-on-surface-variant">Pantau kesehatan dan kesiapan kerja tim Anda.</p>
+            </div>
+            <nav className="flex bg-surface-container-high p-1 rounded-xl">
               {['Overview', 'Tim Saya', 'Laporan Keamanan'].map(t => (
-                <span
+                <button
                   key={t}
                   onClick={() => setActiveTab(t)}
-                  className={`text-body-md cursor-pointer pb-1 transition-all
+                  className={`px-lg py-2 rounded-lg text-label-md transition-all
                     ${activeTab === t
-                      ? 'text-secondary font-bold border-b-2 border-secondary'
-                      : 'text-on-surface-variant hover:bg-surface-container-high px-2 rounded'}`}
+                      ? 'bg-surface text-primary shadow-sm font-bold'
+                      : 'text-on-surface-variant hover:text-on-surface'}`}
                 >
                   {t}
-                </span>
+                </button>
               ))}
-            </div>
-            <div className="flex items-center gap-md">
-              <span className="material-symbols-outlined cursor-pointer hover:bg-surface-container-high p-2 rounded-full transition-colors">
-                notifications
-              </span>
-              <div className="flex items-center gap-sm">
-                <div className="text-right hidden sm:block">
-                  <p className="text-label-md text-on-surface">{user?.name || 'Admin Alpha'}</p>
-                  <p className="text-[10px] text-on-surface-variant">Shift Alpha-7</p>
-                </div>
-                <span className="material-symbols-outlined text-primary cursor-pointer" style={{ fontSize: '32px' }}>
-                  account_circle
-                </span>
-              </div>
-            </div>
+            </nav>
           </div>
         </header>
 
@@ -273,7 +256,7 @@ export default function Dashboard() {
                   <table className="w-full text-left">
                     <thead>
                       <tr className="bg-surface-container-low">
-                        {['NAMA', 'WAKTU', 'SKOR RISIKO', 'STATUS', 'TINDAKAN'].map(h => (
+                        {['NIP', 'NAMA', 'WAKTU', 'SKOR RISIKO', 'STATUS', 'TINDAKAN'].map(h => (
                           <th key={h} className="px-lg py-md text-label-md text-on-surface-variant">{h}</th>
                         ))}
                       </tr>
@@ -281,13 +264,13 @@ export default function Dashboard() {
                     <tbody className="divide-y divide-outline-variant">
                       {loading ? (
                         <tr>
-                          <td colSpan={5} className="px-lg py-xl text-center text-on-surface-variant text-body-sm">
+                          <td colSpan={6} className="px-lg py-xl text-center text-on-surface-variant text-body-sm">
                             Memuat data...
                           </td>
                         </tr>
                       ) : filteredEmp.length === 0 ? (
                         <tr>
-                          <td colSpan={5} className="px-lg py-xl text-center text-on-surface-variant text-body-sm">
+                          <td colSpan={6} className="px-lg py-xl text-center text-on-surface-variant text-body-sm">
                             Tidak ada data.
                           </td>
                         </tr>
@@ -301,7 +284,8 @@ export default function Dashboard() {
                           : '–'
                         return (
                           <tr key={emp.employee_id} className="hover:bg-surface transition-colors">
-                            <td className="px-lg py-md text-body-md text-on-surface">{emp.name}</td>
+                            <td className="px-lg py-md text-body-sm font-mono text-on-surface-variant">{emp.employee_number}</td>
+                            <td className="px-lg py-md text-body-md font-bold text-on-surface">{emp.name}</td>
                             <td className="px-lg py-md text-body-sm text-on-surface-variant">{time}</td>
                             <td className={`px-lg py-md text-body-md font-medium ${isNotFit ? 'text-error' : 'text-on-surface'}`}>
                               {emp.status ? `${score}/100` : '–'}

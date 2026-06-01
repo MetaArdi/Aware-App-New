@@ -15,6 +15,7 @@ export default function TopBar({ title, tabs }) {
             {tabs.map(t => (
               <span
                 key={t.label}
+                onClick={t.onClick}
                 className={`text-body-md cursor-pointer pb-1
                   ${t.active
                     ? 'text-secondary font-bold border-b-2 border-secondary'
@@ -34,7 +35,7 @@ export default function TopBar({ title, tabs }) {
         <div className="flex items-center gap-sm">
           <div className="text-right hidden sm:block">
             <p className="text-label-md text-on-surface">{user?.name || 'User'}</p>
-            <p className="text-[10px] text-on-surface-variant">Industrial Safety</p>
+            <p className="text-[10px] text-on-surface-variant">{user?.division || 'Industrial Safety'}</p>
           </div>
           <button onClick={logout} title="Keluar" className="hover:opacity-80 transition">
             <span className="material-symbols-outlined text-primary cursor-pointer" style={{ fontSize: '32px' }}>

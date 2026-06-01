@@ -124,7 +124,7 @@ export default function Login() {
                       value={idNumber}
                       onChange={e => setIdNumber(e.target.value)}
                       placeholder={role === 'supervisor' ? 'Contoh: SV-2023-001' : 'Contoh: AW-2023-001'}
-                      className="w-full pl-xl pr-md py-md bg-surface border border-outline-variant rounded-lg
+                      className="w-full pl-[48px] pr-md py-md bg-surface border border-outline-variant rounded-lg
                                  focus:ring-2 focus:ring-secondary focus:border-secondary transition-all
                                  outline-none text-body-md"
                       required
@@ -144,7 +144,7 @@ export default function Login() {
                       value={password}
                       onChange={e => setPassword(e.target.value)}
                       placeholder="Masukkan kata sandi"
-                      className="w-full pl-xl pr-xl py-md bg-surface border border-outline-variant rounded-lg
+                      className="w-full pl-[48px] pr-[48px] py-md bg-surface border border-outline-variant rounded-lg
                                  focus:ring-2 focus:ring-secondary focus:border-secondary transition-all
                                  outline-none text-body-md"
                       required

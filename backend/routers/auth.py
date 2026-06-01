@@ -22,15 +22,18 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
 
     employee_id = None
     name        = None
+    division    = None
     if user.employee:
         employee_id = user.employee.id
         name        = user.employee.name
+        division    = user.employee.division
 
     return TokenResponse(
         access_token=token,
         role=user.role,
         employee_id=employee_id,
-        name=name
+        name=name,
+        division=division
     )
 
 
@@ -41,5 +44,6 @@ def get_me(current_user: User = Depends(get_current_user)):
         "employee_number": current_user.employee_number,
         "email":           current_user.email,
         "role":            current_user.role,
-        "name":            current_user.employee.name if current_user.employee else None
+        "name":            current_user.employee.name if current_user.employee else None,
+        "division":        current_user.employee.division if current_user.employee else "General"
     }
