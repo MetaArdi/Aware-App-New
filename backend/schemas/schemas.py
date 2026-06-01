@@ -15,6 +15,7 @@ class TokenResponse(BaseModel):
     role: str
     employee_id: Optional[int] = None
     name: Optional[str] = None
+    division: Optional[str] = None
 
 
 # ── Screening ────────────────────────────────────────────────────────
@@ -71,6 +72,7 @@ class EmployeeCreate(BaseModel):
 class EmployeeStatusItem(BaseModel):
     employee_id:      int
     name:             str
+    employee_number:  Optional[str] = None
     division:         str
     shift:            str
     status:           Optional[str] = None

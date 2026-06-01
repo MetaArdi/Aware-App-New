@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import Login          from './pages/Login'
 import Screening      from './pages/Screening'
+import Notifications  from './pages/Notifications'
 import MLSandbox      from './pages/MLSandbox'
 import Dashboard      from './pages/Dashboard'
 import EmployeeDetail from './pages/EmployeeDetail'
@@ -26,8 +27,13 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/screening" element={
-        <ProtectedRoute allowedRoles={['employee']}>
+        <ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin']}>
           <Screening />
+        </ProtectedRoute>
+      } />
+      <Route path="/notifications" element={
+        <ProtectedRoute>
+          <Notifications />
         </ProtectedRoute>
       } />
       <Route path="/dashboard" element={

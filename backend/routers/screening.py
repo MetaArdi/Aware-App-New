@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from datetime import datetime, date
-from models.database import get_db, ScreeningResult, Employee, User
+from models.database import get_db, ScreeningResult, Employee, User, Notification
 from schemas.schemas import ScreeningRequest, ScreeningResponse, RealtimeScreeningRequest, RealtimeScreeningResponse
 from services.ml_client import call_ml_predict, call_ml_realtime
 from services.risk_scoring import calculate_risk_score, determine_status
@@ -69,6 +70,20 @@ async def analyze(
     db.commit()
     db.refresh(screening)
 
+    # 6. Kirim notifikasi ke Supervisor jika Not Fit
+    if status == "not_fit":
+        supervisors = db.query(User).filter(User.role == "supervisor").all()
+        for sup in supervisors:
+            notif = Notification(
+                user_id=sup.id,
+                title="ALERT: Kondisi Karyawan Tidak Fit",
+                message=f"Karyawan {employee.name} (ID: {employee.user.employee_number}) terdeteksi tidak fit dengan skor risiko {risk_score:.2f}.",
+                type="error",
+                link=f"/employee/{employee.id}"
+            )
+            db.add(notif)
+        db.commit()
+
     return ScreeningResponse(
         status=status,
         risk_score=risk_score,
@@ -100,12 +115,46 @@ def get_history(
     )
     return [
         {
+            "id":            r.id,
             "date":          r.screening_date,
             "status":        r.status,
             "risk_score":    r.risk_score,
             "fatigue_score": r.fatigue_score,
             "sleep_hours":   r.sleep_hours,
             "energy_level":  r.energy_level,
+            "supervisor_note": r.supervisor_note
         }
         for r in results
     ]
+class NoteUpdate(BaseModel):
+    note: str
+
+@router.post("/{screening_id}/note")
+def update_supervisor_note(
+    screening_id: int,
+    payload: NoteUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role not in ["supervisor", "admin"]:
+        raise HTTPException(status_code=403, detail="Hanya supervisor yang dapat memberikan catatan")
+    
+    screening = db.query(ScreeningResult).filter(ScreeningResult.id == screening_id).first()
+    if not screening:
+        raise HTTPException(status_code=404, detail="Data screening tidak ditemukan")
+    
+    screening.supervisor_note = payload.note
+    
+    # Kirim notifikasi ke karyawan (pemilik hasil asesmen)
+    if screening.employee and screening.employee.user_id:
+        new_notif = Notification(
+            user_id=screening.employee.user_id,
+            title="Pesan dari Supervisor",
+            message=f"Supervisor memberikan instruksi: \"{payload.note}\"",
+            type="info",
+            link="/logs" # Arahkan ke Health Logs untuk melihat riwayat
+        )
+        db.add(new_notif)
+    
+    db.commit()
+    return {"status": "success", "note": payload.note}

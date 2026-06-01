@@ -5,7 +5,7 @@ from typing import List
 import time
 
 from models.database import Base, engine
-from routers import auth, screening, employees, dashboard
+from routers import auth, screening, employees, dashboard, notifications
 from services.model_service import ModelService
 from core.config import MODEL_PATH
 
@@ -24,11 +24,11 @@ class PredictRequest(BaseModel):
         frames (List[str]): List of base64 encoded strings representing image frames.
     """
     frames: List[str]
-    config: dict = None
+    config: dict | None = None
 
 class RealtimePredictRequest(BaseModel):
     frame: str
-    config: dict = None
+    config: dict | None = None
 
 app.add_middleware(
     CORSMiddleware,
@@ -46,6 +46,7 @@ app.include_router(auth.router)
 app.include_router(screening.router)
 app.include_router(employees.router)
 app.include_router(dashboard.router)
+app.include_router(notifications.router)
 
 
 @app.get("/")

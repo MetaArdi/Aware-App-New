@@ -18,10 +18,24 @@ export function AuthProvider({ children }) {
     setLoading(false)
   }, [])
 
-  const login = async (employee_number, password) => {
+  const login = async (employee_number, password, expectedRole) => {
     const res = await api.post('/auth/login', { employee_number, password })
-    const { access_token, role, employee_id, name } = res.data
-    const userData = { role, employee_id, name, employee_number }
+    const { access_token, role, employee_id, name, division } = res.data
+
+    // Security Filter: Ensure user role matches the selected tab
+    // Admin can bypass this check to enter either portal
+    if (expectedRole && role !== expectedRole && role !== 'admin') {
+      const roleLabel = expectedRole === 'supervisor' ? 'Karyawan' : 'Supervisor'
+      throw { 
+        response: { 
+          data: { 
+            detail: `Akses ditolak. Akun Anda terdeteksi sebagai ${roleLabel}. Silakan gunakan tab login yang sesuai.` 
+          } 
+        } 
+      }
+    }
+
+    const userData = { role, employee_id, name, employee_number, division }
     localStorage.setItem('token', access_token)
     localStorage.setItem('user', JSON.stringify(userData))
     setUser(userData)

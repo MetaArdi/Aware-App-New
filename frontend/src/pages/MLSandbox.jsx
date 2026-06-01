@@ -223,11 +223,10 @@ export default function MLSandbox() {
 
   return (
     <div className="bg-background min-h-screen text-on-background">
-      <TopBar title="AWARE Testing Lab" tabs={[{ label: 'ML Sandbox', active: true }]} />
       <div className="flex">
-        <SideNav userName={user?.name} subLabel="Research & Development" />
+        <SideNav userName={user?.name} subLabel={user?.division || "Research & Development"} />
         
-        <main className="lg:ml-64 pt-[64px] min-h-screen px-margin-mobile md:px-margin-desktop pb-xl w-full">
+        <main className="lg:ml-64 flex-1 p-margin-mobile md:p-margin-desktop pb-xl w-full">
           <div className="max-w-7xl mx-auto space-y-6 mt-md">
             <header className="flex justify-between items-end">
               <div>

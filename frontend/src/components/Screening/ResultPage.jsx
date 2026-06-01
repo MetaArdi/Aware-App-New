@@ -75,14 +75,8 @@ export default function ResultPage({ result, onRestart }) {
 
   return (
     <div className="bg-surface text-on-surface min-h-screen flex flex-col">
-      <TopBar title="AWARE" tabs={[
-        { label: 'Assessment',  active: true },
-        { label: 'Dashboard',   active: false },
-        { label: 'Health Logs', active: false },
-      ]} />
-
       <div className="flex flex-1">
-        <SideNav userName={user?.name} subLabel="Industrial Safety" />
+        <SideNav userName={user?.name} subLabel={user?.division} />
 
         <main className="flex-1 lg:ml-64 p-margin-mobile md:p-margin-desktop bg-background pb-32">
           <div className="max-w-4xl mx-auto">

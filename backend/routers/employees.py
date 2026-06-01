@@ -65,6 +65,7 @@ def get_all_status(
         result.append({
             "employee_id":      emp.id,
             "name":             emp.name,
+            "employee_number":  emp.user.employee_number if emp.user else "N/A",
             "division":         emp.division,
             "shift":            emp.shift,
             "status":           latest.status if latest else None,

@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
+import axios from '../api/axios'
 
 export default function Login() {
   const { login }               = useAuth()
@@ -14,13 +15,32 @@ export default function Login() {
   const [showPrivacyModal, setShowPrivacyModal] = useState(false)
   const [showTermsModal, setShowTermsModal]     = useState(false)
   const [showK3Modal, setShowK3Modal]           = useState(false)
+  const [isOnline, setIsOnline]                 = useState(true)
+
+  const APP_VERSION = "1.0.0-rc1"
+  const CURRENT_YEAR = new Date().getFullYear()
+
+  useEffect(() => {
+    const checkConnection = async () => {
+      try {
+        await axios.get('/health')
+        setIsOnline(true)
+      } catch (err) {
+        setIsOnline(false)
+      }
+    }
+    
+    checkConnection()
+    const interval = setInterval(checkConnection, 10000) // Cek tiap 10 detik
+    return () => clearInterval(interval)
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setLoading(true)
     try {
-      await login(idNumber, password)
+      await login(idNumber, password, role)
     } catch (err) {
       setError(
         err.response?.data?.detail ||
@@ -124,7 +144,7 @@ export default function Login() {
                       value={idNumber}
                       onChange={e => setIdNumber(e.target.value)}
                       placeholder={role === 'supervisor' ? 'Contoh: SV-2023-001' : 'Contoh: AW-2023-001'}
-                      className="w-full pl-xl pr-md py-md bg-surface border border-outline-variant rounded-lg
+                      className="w-full pl-[48px] pr-md py-md bg-surface border border-outline-variant rounded-lg
                                  focus:ring-2 focus:ring-secondary focus:border-secondary transition-all
                                  outline-none text-body-md"
                       required
@@ -144,7 +164,7 @@ export default function Login() {
                       value={password}
                       onChange={e => setPassword(e.target.value)}
                       placeholder="Masukkan kata sandi"
-                      className="w-full pl-xl pr-xl py-md bg-surface border border-outline-variant rounded-lg
+                      className="w-full pl-[48px] pr-[48px] py-md bg-surface border border-outline-variant rounded-lg
                                  focus:ring-2 focus:ring-secondary focus:border-secondary transition-all
                                  outline-none text-body-md"
                       required
@@ -217,6 +237,8 @@ export default function Login() {
               <span className="hidden md:inline">•</span>
               <button type="button" onClick={() => setShowK3Modal(true)}
                       className="hover:text-secondary transition-colors">Kepatuhan K3</button>
+              <span className="hidden md:inline">•</span>
+              <span className="hidden md:inline">© {CURRENT_YEAR} AWARE Project</span>
             </div>
           </div>
         </section>
@@ -224,16 +246,25 @@ export default function Login() {
 
       <footer className="bg-surface-container-low border-t border-outline-variant px-margin-mobile md:px-margin-desktop py-sm flex justify-between items-center">
         <div className="flex items-center gap-sm">
-          <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-          <span className="text-label-md text-on-surface-variant uppercase tracking-tighter">System Secure &amp; Online</span>
+          <div className={`w-2 h-2 rounded-full shadow-[0_0_8px] transition-all duration-500
+            ${isOnline 
+              ? 'bg-emerald-500 shadow-emerald-500/50' 
+              : 'bg-error shadow-error/50 animate-pulse'}`} 
+          />
+          <span className="text-label-md text-on-surface-variant uppercase tracking-tighter">
+            {isOnline ? 'System Secure & Online' : 'Offline - Check Connection'}
+          </span>
         </div>
         <div className="flex items-center gap-md">
           <div className="hidden md:flex flex-col items-end">
-            <span className="text-body-sm font-semibold text-on-surface">V 2.4.0-Build Alpha</span>
+            <span className="text-body-sm font-semibold text-on-surface">V {APP_VERSION}</span>
             <span className="text-[10px] text-outline uppercase tracking-widest">Enterprise Edition</span>
           </div>
           <div className="w-10 h-10 flex items-center justify-center bg-surface-container-highest rounded-full">
-            <span className="material-symbols-outlined text-secondary" style={{ fontSize: '20px' }}>shield</span>
+            <span className={`material-symbols-outlined transition-colors duration-500
+              ${isOnline ? 'text-secondary' : 'text-error'}`} style={{ fontSize: '20px' }}>
+              {isOnline ? 'shield' : 'report'}
+            </span>
           </div>
         </div>
       </footer>
