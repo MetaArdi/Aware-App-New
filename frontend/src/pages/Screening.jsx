@@ -201,8 +201,14 @@ export default function Screening() {
       <div className="flex">
         <SideNav userName={user?.name} subLabel={user?.division} />
 
-        <main className="lg:ml-64 flex-1 p-margin-mobile md:p-margin-desktop pb-xl w-full">
-          <div className="max-w-6xl mx-auto grid grid-cols-12 gap-lg mt-md">
+        <main className="lg:ml-64 flex-1 pb-xl w-full">
+          <header className="px-margin-mobile md:px-margin-desktop py-lg border-b border-outline-variant">
+            <h1 className="text-headline-lg font-bold text-primary">ASSESSMENT KESEHATAN</h1>
+            <p className="text-body-sm text-on-surface-variant">Lakukan verifikasi kondisi fisik Anda sebelum memulai shift kerja.</p>
+          </header>
+
+          <div className="p-margin-mobile md:p-margin-desktop">
+            <div className="max-w-6xl mx-auto grid grid-cols-12 gap-lg mt-md">
 
             {/* Left */}
             <div className="col-span-12 lg:col-span-3 order-2 lg:order-1 flex flex-col gap-lg">
@@ -451,8 +457,9 @@ export default function Screening() {
             </div>
 
           </div>
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
-  )
+  </div>
+)
 }
