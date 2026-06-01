@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import api from '../../api/axios'
 
 const NAV_ITEMS = [
   { icon: 'dashboard',    label: 'Dashboard',    path: '/dashboard' },
@@ -13,6 +15,23 @@ export default function SideNav({ userName, subLabel }) {
   const navigate   = useNavigate()
   const location   = useLocation()
   const { logout, user } = useAuth()
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  const fetchUnreadCount = async () => {
+    try {
+      const res = await api.get('/notifications/')
+      const unread = res.data.filter(n => !n.is_read).length
+      setUnreadCount(unread)
+    } catch (err) {
+      // silent fail
+    }
+  }
+
+  useEffect(() => {
+    fetchUnreadCount()
+    const interval = setInterval(fetchUnreadCount, 30000)
+    return () => clearInterval(interval)
+  }, [])
 
   // Filter nav items based on user role
   const items = NAV_ITEMS.filter(item => {
@@ -55,8 +74,11 @@ export default function SideNav({ userName, subLabel }) {
             >
               <span className="material-symbols-outlined">{item.icon}</span>
               {item.label}
-              {item.path === '/notifications' && (
-                <span className="absolute right-4 w-2 h-2 bg-error rounded-full border border-surface"></span>
+              {item.path === '/notifications' && unreadCount > 0 && (
+                <span className="absolute right-4 min-w-[18px] h-[18px] bg-error text-on-error text-[10px] 
+                                  flex items-center justify-center rounded-full border border-surface px-1 font-bold">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
               )}
             </button>
           )
