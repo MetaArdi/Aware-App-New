@@ -23,7 +23,8 @@ export function AuthProvider({ children }) {
     const { access_token, role, employee_id, name, division } = res.data
 
     // Security Filter: Ensure user role matches the selected tab
-    if (expectedRole && role !== expectedRole) {
+    // Admin can bypass this check to enter either portal
+    if (expectedRole && role !== expectedRole && role !== 'admin') {
       const roleLabel = expectedRole === 'supervisor' ? 'Karyawan' : 'Supervisor'
       throw { 
         response: { 

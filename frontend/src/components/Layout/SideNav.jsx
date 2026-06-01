@@ -20,8 +20,8 @@ export default function SideNav({ userName, subLabel }) {
     if (item.path === '/dashboard' && !['admin', 'supervisor'].includes(user?.role)) return false
     
     // Screening (Assessment) terbuka untuk employee, 
-    // juga untuk supervisor agar mereka bisa melakukan self-screening
-    if (item.path === '/screening' && !['employee', 'supervisor'].includes(user?.role)) return false
+    // juga untuk supervisor/admin agar mereka bisa melakukan self-screening
+    if (item.path === '/screening' && !['employee', 'supervisor', 'admin'].includes(user?.role)) return false
     
     return true
   })
