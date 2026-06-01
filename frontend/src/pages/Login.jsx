@@ -40,7 +40,7 @@ export default function Login() {
     setError('')
     setLoading(true)
     try {
-      await login(idNumber, password)
+      await login(idNumber, password, role)
     } catch (err) {
       setError(
         err.response?.data?.detail ||
