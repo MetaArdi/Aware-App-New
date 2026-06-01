@@ -205,7 +205,7 @@ export default function Screening() {
       ]} />
 
       <div className="flex">
-        <SideNav userName={user?.name} subLabel="Industrial Safety" />
+        <SideNav userName={user?.name} subLabel={user?.division} />
 
         <main className="lg:ml-64 pt-[64px] min-h-screen px-margin-mobile md:px-margin-desktop pb-xl w-full">
           <div className="max-w-6xl mx-auto grid grid-cols-12 gap-lg mt-md">
@@ -421,29 +421,34 @@ export default function Screening() {
               <div className="bg-surface-container-low border border-outline-variant p-lg rounded-xl flex flex-col items-center text-center">
                 <span className="material-symbols-outlined text-secondary mb-sm" style={{ fontSize: '48px' }}>monitoring</span>
                 <h4 className="text-headline-md font-bold text-primary">Fit-to-Work</h4>
-                <p className="text-body-sm text-on-surface-variant">Analisis sedang berjalan...</p>
+                <p className="text-body-sm text-on-surface-variant">
+                  {phase === 'scanning' ? 'Sistem sedang menganalisis fokus dan kelelahan Anda...' : 'Siap untuk memulai analisis kondisi.'}
+                </p>
               </div>
-              <div className="grid grid-cols-2 lg:grid-cols-1 gap-lg">
-                <div className="bg-surface-container-lowest border border-outline-variant p-md rounded-xl">
-                  <span className="text-label-md text-on-surface-variant block mb-xs">Heart Rate</span>
-                  <div className="flex items-baseline gap-xs">
-                    <span className="text-headline-lg font-bold text-primary">72</span>
-                    <span className="text-body-sm text-on-surface-variant">BPM</span>
-                  </div>
-                </div>
-                <div className="bg-surface-container-lowest border border-outline-variant p-md rounded-xl">
-                  <span className="text-label-md text-on-surface-variant block mb-xs">Focus Score</span>
-                  <div className="flex items-baseline gap-xs">
-                    <span className="text-headline-lg font-bold text-primary">94</span>
-                    <span className="text-body-sm text-on-surface-variant">%</span>
-                  </div>
-                </div>
+
+              <div className="bg-surface-container-lowest border border-outline-variant p-lg rounded-xl">
+                <h3 className="text-label-md text-secondary uppercase tracking-widest mb-md italic">Panduan Cepat</h3>
+                <ul className="space-y-sm text-body-sm text-on-surface-variant">
+                  <li className="flex items-start gap-xs">
+                    <span className="material-symbols-outlined text-primary text-[18px]">verified</span>
+                    Cahaya harus cukup terang
+                  </li>
+                  <li className="flex items-start gap-xs">
+                    <span className="material-symbols-outlined text-primary text-[18px]">verified</span>
+                    Wajah harus terlihat jelas
+                  </li>
+                  <li className="flex items-start gap-xs">
+                    <span className="material-symbols-outlined text-primary text-[18px]">verified</span>
+                    Jangan memakai kacamata hitam
+                  </li>
+                </ul>
               </div>
+
               {phase === 'scanning' && (
                 <button
                   onClick={cancelScreening}
                   className="mt-auto w-full py-lg bg-error text-on-error rounded-xl font-bold
-                             flex items-center justify-center gap-md hover:opacity-90 transition-all"
+                             flex items-center justify-center gap-md hover:opacity-90 transition-all shadow-md"
                 >
                   <span className="material-symbols-outlined">cancel</span>
                   BATALKAN SCREENING
