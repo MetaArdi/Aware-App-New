@@ -75,20 +75,22 @@ export default function Dashboard() {
               <h1 className="text-headline-lg font-bold text-primary">DASHBOARD SUPERVISOR</h1>
               <p className="text-body-sm text-on-surface-variant">Pantau kesehatan dan kesiapan kerja tim Anda.</p>
             </div>
-            <nav className="flex bg-surface-container-high p-1 rounded-xl">
-              {['Overview', 'Tim Saya', 'Laporan Keamanan'].map(t => (
-                <button
-                  key={t}
-                  onClick={() => setActiveTab(t)}
-                  className={`px-lg py-2 rounded-lg text-label-md transition-all
-                    ${activeTab === t
-                      ? 'bg-surface text-primary shadow-sm font-bold'
-                      : 'text-on-surface-variant hover:text-on-surface'}`}
-                >
-                  {t}
-                </button>
-              ))}
-            </nav>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-md">
+              <nav className="flex bg-surface-container-high p-1 rounded-xl">
+                {['Overview', 'Tim Saya', 'Laporan Keamanan'].map(t => (
+                  <button
+                    key={t}
+                    onClick={() => setActiveTab(t)}
+                    className={`px-lg py-2 rounded-lg text-label-md transition-all
+                      ${activeTab === t
+                        ? 'bg-surface text-primary shadow-sm font-bold'
+                        : 'text-on-surface-variant hover:text-on-surface'}`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </nav>
+            </div>
           </div>
         </header>
 

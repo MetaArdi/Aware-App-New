@@ -2,8 +2,8 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 
 const NAV_ITEMS = [
-  { icon: 'biotech',      label: 'Assessment',   path: '/screening' },
   { icon: 'dashboard',    label: 'Dashboard',    path: '/dashboard' },
+  { icon: 'biotech',      label: 'Assessment',   path: '/screening' },
   { icon: 'notifications', label: 'Notifications', path: '/notifications' },
   { icon: 'history',      label: 'Health Logs',  path: '/logs' },
   { icon: 'settings',     label: 'Settings',     path: '/settings' },
@@ -14,10 +14,15 @@ export default function SideNav({ userName, subLabel }) {
   const location   = useLocation()
   const { logout, user } = useAuth()
 
-  // Sembunyikan Dashboard jika bukan admin/supervisor, sembunyikan Screening jika bukan employee
+  // Filter nav items based on user role
   const items = NAV_ITEMS.filter(item => {
+    // Dashboard hanya untuk admin/supervisor
     if (item.path === '/dashboard' && !['admin', 'supervisor'].includes(user?.role)) return false
-    if (item.path === '/screening' && user?.role !== 'employee') return false
+    
+    // Screening (Assessment) terbuka untuk employee, 
+    // juga untuk supervisor agar mereka bisa melakukan self-screening
+    if (item.path === '/screening' && !['employee', 'supervisor'].includes(user?.role)) return false
+    
     return true
   })
 

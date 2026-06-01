@@ -27,7 +27,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/screening" element={
-        <ProtectedRoute allowedRoles={['employee']}>
+        <ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin']}>
           <Screening />
         </ProtectedRoute>
       } />
