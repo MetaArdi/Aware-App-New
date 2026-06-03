@@ -14,7 +14,7 @@ export default function HealthLogs() {
   useEffect(() => {
     const targetId = user?.employee_id
     if (targetId) {
-      api.get(\`/screening/history/\${targetId}\`)
+      api.get(`/screening/history/${targetId}`)
         .then(r => setHistory(r.data))
         .catch(err => console.error("Gagal memuat Health Logs:", err))
         .finally(() => setLoading(false))
@@ -76,10 +76,10 @@ export default function HealthLogs() {
                             {new Date(h.date).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' })}
                           </td>
                           <td className="px-lg py-sm">
-                            <span className={\`px-3 py-1 rounded-full text-[11px] font-bold tracking-wider
-                              \${h.status === 'fit' ? 'bg-green-100 text-green-700' : 
+                            <span className={`px-3 py-1 rounded-full text-[11px] font-bold tracking-wider
+                              ${h.status === 'fit' ? 'bg-green-100 text-green-700' : 
                                 h.status === 'at_risk' ? 'bg-amber-100 text-amber-700' :
-                                'bg-error-container text-error'}\`}>
+                                'bg-error-container text-error'}`}>
                               {h.status.toUpperCase()}
                             </span>
                           </td>
