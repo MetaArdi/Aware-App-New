@@ -11,7 +11,7 @@ httpx
 python-dotenv
 tensorflow-cpu
 numpy
-opencv-python
+opencv-python-headless
 pillow
 pillow-heif
 mediapipe
