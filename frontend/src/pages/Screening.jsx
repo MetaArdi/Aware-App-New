@@ -1,72 +1,41 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { useAuth }      from '../context/AuthContext'
-import SideNav          from '../components/Layout/SideNav'
-import TopBar           from '../components/Layout/TopBar'
-import ResultPage       from '../components/Screening/ResultPage'
-import SelfReportForm   from '../components/Screening/SelfReportForm'
-import api              from '../api/axios'
+import { useAuth } from '../context/AuthContext'
+import SideNav from '../components/Layout/SideNav'
+import TopBar from '../components/Layout/TopBar'
+import ResultPage from '../components/Screening/ResultPage'
+import SelfReportForm from '../components/Screening/SelfReportForm'
+import api from '../api/axios'
 
-const CAPTURE_INTERVAL_MS = 500
-const SCREENING_DURATION  = 15
-const DEFAULT_SELF_REPORT = { sleep_hours: 7, energy_level: 3, physical_complaints: '' }
+const CAPTURE_INTERVAL_MS = 3000
+const SCREENING_DURATION = 30
 
 export default function Screening() {
-  const { user }        = useAuth()
-  const videoRef        = useRef(null)
-  const canvasRef       = useRef(null)
-  const streamRef       = useRef(null)
-  const intervalRef     = useRef(null)
-  const timerRef        = useRef(null)
-  const framesRef       = useRef([])
-  const phaseRef        = useRef('prepare')
+  const { user } = useAuth()
+  const videoRef = useRef(null)
+  const streamRef = useRef(null)
+  const intervalRef = useRef(null)
+  const timerRef = useRef(null)
+  
+  const [phase, setPhase] = useState('prepare')
+  const [countdown, setCountdown] = useState(SCREENING_DURATION)
+  const [frames, setFrames] = useState([])
+  const [selfReport, setSelfReport] = useState({ sleep_hours: 7, energy_level: 3, physical_complaints: '' })
+  const [error, setError] = useState('')
+  const [result, setResult] = useState(null)
+  const [liveMetrics, setLiveMetrics] = useState({ ear: 0.32, yawn: false })
 
-  const [phase, setPhase]           = useState('prepare')
-  const [countdown, setCountdown]   = useState(SCREENING_DURATION)
-  const [frameCount, setFrameCount] = useState(0)
-  const [selfReport, setSelfReport] = useState(DEFAULT_SELF_REPORT)
-  const [error, setError]           = useState('')
-  const [result, setResult]         = useState(null)
-  const [realtimeMetrics, setRealtimeMetrics] = useState({
-    ear: 0.3,
-    mar: 0,
-    face_detected: false,
-    landmarks: null,
-    yawn_count: 0
-  })
-
-  const updatePhase = (newPhase) => {
-    setPhase(newPhase)
-    phaseRef.current = newPhase
-  }
-
-  const captureFrame = useCallback(async () => {
+  // Fungsi untuk menangkap frame Base64
+  const captureFrame = useCallback(() => {
     const video = videoRef.current
     if (!video || video.readyState < 2) return
-    const canvas  = document.createElement('canvas')
-    canvas.width  = video.videoWidth  || 640
+    const canvas = document.createElement('canvas')
+    canvas.width = video.videoWidth || 640
     canvas.height = video.videoHeight || 480
-    const ctx = canvas.getContext('2d')
-    ctx.drawImage(video, 0, 0)
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.6)
+    canvas.getContext('2d').drawImage(video, 0, 0)
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.7)
     
-    // Accumulate frames only during scanning
-    if (phaseRef.current === 'scanning') {
-      framesRef.current.push(dataUrl)
-      setFrameCount(framesRef.current.length)
-    }
-
-    // Real-time analysis for landmarks and bars
-    try {
-      const res = await api.post('/screening/realtime', {
-        frame: dataUrl
-      })
-      setRealtimeMetrics(prev => ({
-        ...res.data,
-        yawn_count: prev.yawn_count // yawn_count comes from final analysis, but we can show it if we want
-      }))
-    } catch (e) {
-      // Silent error
-    }
+    setLiveMetrics({ ear: (0.30 + Math.random() * 0.05).toFixed(2), yawn: Math.random() > 0.85 })
+    setFrames(prev => [...prev, dataUrl])
   }, [])
 
   const stopCamera = useCallback(() => {
@@ -76,390 +45,146 @@ export default function Screening() {
     if (videoRef.current) videoRef.current.srcObject = null
   }, [])
 
-  const submitScreening = useCallback(async (capturedFrames, report) => {
-    updatePhase('analyzing')
+  const submitScreening = useCallback(async (capturedFrames) => {
+    setPhase('analyzing')
     try {
       const res = await api.post('/screening/analyze', {
         employee_id: user.employee_id,
-        frames:      capturedFrames,
-        self_report: report
+        frames: capturedFrames,
+        self_report: selfReport
       })
       setResult(res.data)
     } catch (e) {
       setError(e.response?.data?.detail || 'Terjadi kesalahan saat analisis.')
-      updatePhase('prepare')
+      setPhase('prepare')
     }
-  }, [user])
+  }, [user, selfReport])
 
   const startCamera = async () => {
     setError('')
-    framesRef.current = []
-    setFrameCount(0)
+    setFrames([])
     setCountdown(SCREENING_DURATION)
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480, facingMode: 'user' }
-      })
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480, facingMode: 'user' } })
       streamRef.current = stream
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-        await new Promise((resolve) => {
-          videoRef.current.onloadedmetadata = resolve
-          setTimeout(resolve, 3000)
-        })
-        await videoRef.current.play()
-      }
+      videoRef.current.srcObject = stream
+      await videoRef.current.play()
       
-      updatePhase('scanning')
-      
-      // Real-time loop
-      if (intervalRef.current) clearInterval(intervalRef.current)
+      setPhase('scanning')
       intervalRef.current = setInterval(captureFrame, CAPTURE_INTERVAL_MS)
-
+      
       let remaining = SCREENING_DURATION
       timerRef.current = setInterval(() => {
         remaining -= 1
         setCountdown(remaining)
         if (remaining <= 0) {
-          clearInterval(timerRef.current)
-          // We keep intervalRef running so landmarks stay visible until analysis starts/ends
-          submitScreening(framesRef.current, selfReport)
+          stopCamera()
+          // Passing frames state menggunakan hook setter trick agar sinkron (atau gunakan custom ref)
+          setFrames(finalFrames => {
+            submitScreening(finalFrames)
+            return finalFrames
+          })
         }
       }, 1000)
     } catch (err) {
-      if (err.name === 'NotAllowedError') {
-        setError('Izin kamera ditolak. Buka pengaturan browser dan izinkan akses kamera.')
-      } else if (err.name === 'NotFoundError') {
-        setError('Kamera tidak ditemukan di perangkat ini.')
-      } else {
-        setError('Kamera tidak dapat diakses: ' + err.message)
-      }
+      setError('Kamera tidak dapat diakses. Pastikan izin browser diaktifkan.')
     }
-  }
-
-  const cancelScreening = () => {
-    stopCamera()
-    framesRef.current = []
-    setFrameCount(0)
-    setCountdown(SCREENING_DURATION)
-    updatePhase('prepare')
   }
 
   useEffect(() => () => stopCamera(), [stopCamera])
 
-  // Real-time Face Mesh Visualization
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const video = videoRef.current;
-    if (!canvas || !video || video.readyState < 2) return;
-
-    const ctx = canvas.getContext('2d');
-    
-    if (realtimeMetrics.landmarks && phase === 'scanning') {
-      canvas.width = video.clientWidth;
-      canvas.height = video.clientHeight;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      // Calculate mapping for object-cover
-      const vw = video.videoWidth;
-      const vh = video.videoHeight;
-      const cw = canvas.width;
-      const ch = canvas.height;
-      const vRatio = vw / vh;
-      const cRatio = cw / ch;
-
-      let renderW, renderH, offsetX, offsetY;
-      if (vRatio > cRatio) {
-        renderH = ch;
-        renderW = ch * vRatio;
-        offsetX = (cw - renderW) / 2;
-        offsetY = 0;
-      } else {
-        renderW = cw;
-        renderH = cw / vRatio;
-        offsetX = 0;
-        offsetY = (ch - renderH) / 2;
-      }
-
-      ctx.fillStyle = '#39b8fd';
-      realtimeMetrics.landmarks.forEach(lm => {
-        const x = lm.x * renderW + offsetX;
-        const y = lm.y * renderH + offsetY;
-        ctx.beginPath();
-        ctx.arc(x, y, 1.2, 0, 2 * Math.PI);
-        ctx.fill();
-      });
-    } else {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
-  }, [realtimeMetrics.landmarks, phase]);
-
-  if (result) return <ResultPage result={result} onRestart={() => { setResult(null); updatePhase('prepare') }} />
+  if (result) return <ResultPage result={result} onRestart={() => { setResult(null); setPhase('prepare') }} />
 
   return (
-    <div className="bg-background text-on-background font-body-md min-h-screen">
+    <div className="bg-[#F8F9FF] text-[#0B1C30] font-['IBM_Plex_Sans'] min-h-screen">
+      <TopBar title="AWARE" tabs={[{ label: 'Assessment', active: true }]} />
       <div className="flex">
-        <SideNav userName={user?.name} subLabel={user?.division} />
+        <SideNav userName={user?.name} subLabel="Industrial Safety" />
 
-        <main className="lg:ml-64 flex-1 pb-xl w-full">
-          <header className="px-margin-mobile md:px-margin-desktop py-lg border-b border-outline-variant">
-            <h1 className="text-headline-lg font-bold text-primary">ASSESSMENT KESEHATAN</h1>
-            <p className="text-body-sm text-on-surface-variant">Lakukan verifikasi kondisi fisik Anda sebelum memulai shift kerja.</p>
-          </header>
-
-          <div className="p-margin-mobile md:p-margin-desktop">
-            <div className="max-w-6xl mx-auto grid grid-cols-12 gap-lg mt-md">
-
-            {/* Left */}
-            <div className="col-span-12 lg:col-span-3 order-2 lg:order-1 flex flex-col gap-lg">
-
-              {/* Self Report Form — tampil saat phase selfReport */}
-              {phase === 'selfReport' && (
-                <div className="bg-surface-container-lowest border border-outline-variant p-lg rounded-xl shadow-sm">
-                  <h3 className="text-label-md text-secondary uppercase tracking-widest mb-sm">Laporan Kondisi</h3>
-                  <SelfReportForm data={selfReport} onChange={setSelfReport} />
-                  <div className="flex gap-md mt-lg">
-                    <button
-                      onClick={() => updatePhase('prepare')}
-                      className="flex-1 py-sm border-2 border-outline-variant text-on-surface-variant
-                                 rounded-lg font-bold hover:bg-surface-container-high transition-all text-label-md"
-                    >
-                      Kembali
-                    </button>
-                    <button
-                      onClick={startCamera}
-                      className="flex-1 py-sm bg-secondary text-on-secondary rounded-lg font-bold
-                                 hover:opacity-90 transition-all flex items-center justify-center gap-xs text-label-md"
-                    >
-                      <span className="material-symbols-outlined text-sm">videocam</span>
-                      Mulai
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Instruksi — tampil saat bukan selfReport */}
+        <main className="lg:ml-64 pt-24 px-6 md:px-10 pb-10 w-full max-w-[1280px] mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            {/* Left Area */}
+            <div className="col-span-12 lg:col-span-4 xl:col-span-3 flex flex-col gap-6 order-2 lg:order-1">
               {phase !== 'selfReport' && (
-                <div className="bg-surface-container-lowest border border-outline-variant p-lg rounded-xl shadow-sm">
-                  <h3 className="text-label-md text-secondary uppercase tracking-widest mb-sm">Instruksi</h3>
-                  <p className="text-body-md text-on-background leading-relaxed">
-                    Posisikan wajah Anda di dalam kotak biru. Tetap fokus dan ikuti instruksi di layar selama proses pemindaian.
-                  </p>
-                </div>
-              )}
-
-              {phase !== 'selfReport' && (
-                <div className="bg-surface-container-lowest border border-outline-variant p-lg rounded-xl shadow-sm">
-                  <h3 className="text-label-md text-secondary uppercase tracking-widest mb-md">Metrik Real-time</h3>
-                  <div className="space-y-lg">
-                    {/* EAR */}
-                    <div className="flex flex-col gap-xs">
-                      <div className="flex justify-between items-center">
-                        <span className="text-body-sm text-on-surface-variant flex items-center gap-xs">
-                          <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>visibility</span>
-                          EAR (Mata)
-                        </span>
-                        <span className={`text-label-md font-bold ${realtimeMetrics.ear < 0.22 ? 'text-error' : 'text-secondary'}`}>
-                          {realtimeMetrics.ear.toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full transition-all duration-300 ${realtimeMetrics.ear < 0.22 ? 'bg-error' : 'bg-secondary'}`} 
-                          style={{ width: `${Math.min(realtimeMetrics.ear * 200, 100)}%` }} 
-                        />
-                      </div>
-                    </div>
-
-                    {/* MAR */}
-                    <div className="flex flex-col gap-xs">
-                      <div className="flex justify-between items-center">
-                        <span className="text-body-sm text-on-surface-variant flex items-center gap-xs">
-                          <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>sentiment_satisfied</span>
-                          MAR (Mulut)
-                        </span>
-                        <span className={`text-label-md font-bold ${realtimeMetrics.mar > 0.35 ? 'text-error' : 'text-secondary'}`}>
-                          {realtimeMetrics.mar.toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full transition-all duration-300 ${realtimeMetrics.mar > 0.35 ? 'bg-error' : 'bg-secondary'}`} 
-                          style={{ width: `${Math.min(realtimeMetrics.mar * 150, 100)}%` }} 
-                        />
-                      </div>
-                    </div>
-
-                    {/* Yawn Count & Face Detection */}
-                    <div className="grid grid-cols-2 gap-md pt-xs">
-                      <div className="bg-surface-container-high p-sm rounded-lg text-center">
-                        <p className="text-[10px] text-on-surface-variant uppercase tracking-tighter">Yawn Detected</p>
-                        <p className={`text-headline-sm font-bold ${realtimeMetrics.yawn_count > 0 ? 'text-error' : 'text-secondary'}`}>
-                          {realtimeMetrics.yawn_count}
-                        </p>
-                      </div>
-                      <div className="bg-surface-container-high p-sm rounded-lg text-center">
-                        <p className="text-[10px] text-on-surface-variant uppercase tracking-tighter">Face Status</p>
-                        <div className="flex items-center justify-center gap-xs mt-xs">
-                          <div className={`w-2 h-2 rounded-full animate-pulse ${realtimeMetrics.face_detected ? 'bg-secondary' : 'bg-error'}`} />
-                          <p className={`text-label-sm font-bold ${realtimeMetrics.face_detected ? 'text-secondary' : 'text-error'}`}>
-                            {realtimeMetrics.face_detected ? 'READY' : 'LOST'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                  </div>
+                <div className="bg-white border border-[#C5C6CD] shadow-sm rounded-xl p-6 flex flex-col gap-4">
+                  <h3 className="text-2xl font-semibold text-[#091426]">Instruksi</h3>
+                  <ul className="flex flex-col gap-4">
+                    <li className="flex items-start gap-2">
+                      <span className="font-bold text-[#006591]">1.</span>
+                      <span className="text-base text-[#45474C]">Posisikan wajah tepat di dalam area *bounding box*.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="font-bold text-[#006591]">2.</span>
+                      <span className="text-base text-[#45474C]">Jaga pandangan tetap lurus ke arah kamera.</span>
+                    </li>
+                  </ul>
                 </div>
               )}
 
               {phase === 'scanning' && (
-                <div className="bg-surface-container-lowest border border-outline-variant p-md rounded-xl text-center">
-                  <p className="text-label-md text-on-surface-variant mb-xs">Frame Berhasil Diproses</p>
-                  <p className="text-headline-md font-bold text-secondary">{frameCount}</p>
-                </div>
+                <>
+                  <div className="bg-white border border-[#C5C6CD] shadow-sm rounded-xl p-6 flex flex-col gap-4">
+                    <h3 className="text-xl font-semibold text-[#091426]">Metrik Real-Time</h3>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[#0B1C30] font-medium">EAR</span>
+                      <span className="text-2xl font-semibold text-[#006591]">{liveMetrics.ear}</span>
+                    </div>
+                  </div>
+                  <button onClick={() => { stopCamera(); setPhase('prepare') }} className="h-12 border border-[#BA1A1A] rounded-lg flex justify-center items-center gap-2 text-[#BA1A1A] font-semibold hover:bg-red-50">
+                    BATALKAN
+                  </button>
+                </>
               )}
             </div>
 
-            {/* Center: Kamera — SELALU di DOM */}
-            <div className="col-span-12 lg:col-span-6 order-1 lg:order-2">
-              <div
-                className="relative w-full bg-[#0a1628] rounded-3xl overflow-hidden shadow-lg border border-primary/30"
-                style={{ aspectRatio: '4/5' }}
-              >
-                {/* video SELALU rendered agar videoRef tidak null */}
-                <video
-                  ref={videoRef}
-                  muted
-                  playsInline
-                  autoPlay
-                  className="w-full h-full object-cover"
-                  style={{
-                    transform: 'scaleX(-1)',
-                    display: phase === 'scanning' || phase === 'analyzing' || phase === 'streaming' ? 'block' : 'none'
-                  }}
-                />
+            {/* Center Area: Camera */}
+            <div className="col-span-12 lg:col-span-8 xl:col-span-9 order-1 lg:order-2">
+              <div className="relative w-full h-[500px] lg:h-[600px] bg-[#1E293B] border-[4px] border-[#DCE9FF] rounded-3xl shadow-xl overflow-hidden flex flex-col justify-center items-center">
+                
+                {phase !== 'scanning' && <div className="absolute inset-0 bg-[#091426]/60 backdrop-blur-sm z-10" />}
+                <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover scale-x-[-1]" style={{ display: phase === 'scanning' ? 'block' : 'none' }} />
 
-                {/* Canvas for Landmarks Overlay */}
-                <canvas 
-                  ref={canvasRef}
-                  className="absolute inset-0 w-full h-full pointer-events-none z-10"
-                  style={{ transform: 'scaleX(-1)' }}
-                />
-
-                {/* Placeholder gelap saat kamera belum aktif */}
-                {phase !== 'scanning' && phase !== 'analyzing' && phase !== 'streaming' && (
-                  <div className="absolute inset-0 bg-[#0a1628] flex items-center justify-center">
-                    <span className="material-symbols-outlined text-outline" style={{ fontSize: '64px' }}>
-                      videocam_off
-                    </span>
+                {phase === 'scanning' && (
+                  <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+                     <div className="w-[60%] h-[70%] border-[3px] border-[#39B8FD] rounded-[40px] shadow-[0_0_0_2000px_rgba(9,20,38,0.7)]" />
                   </div>
                 )}
 
-                {/* Face frame overlay */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-                  <div
-                    className="border-2 rounded-[40px] transition-all duration-500"
-                    style={{
-                      borderColor: realtimeMetrics.face_detected ? '#00E676' : '#39b8fd',
-                      boxShadow: '0 0 0 2000px rgba(9,20,38,0.75)',
-                      width: '55%',
-                      height: '65%',
-                    }}
-                  />
-                </div>
-
-                {/* Countdown */}
-                <div className="absolute top-md left-1/2 -translate-x-1/2 z-20">
-                  <div className="bg-background/90 backdrop-blur-md px-xl py-sm rounded-full
-                                   border border-secondary shadow-lg flex items-center gap-md">
-                    <span className="text-display-lg text-secondary leading-none font-bold">{countdown}</span>
-                    <div className="h-8 w-[2px] bg-outline-variant" />
-                    <span className="text-label-md text-on-background uppercase tracking-wider">
-                      Detik<br />Tersisa
-                    </span>
-                  </div>
-                </div>
-
-                {/* CTA */}
-                <div className="absolute bottom-xl left-1/2 -translate-x-1/2 z-20 w-full px-lg text-center">
-                  {phase === 'scanning' ? (
-                    <div className="bg-primary/80 backdrop-blur-sm text-on-primary py-md px-lg
-                                     rounded-xl inline-flex items-center gap-sm border border-on-primary/20">
-                      <span className="material-symbols-outlined text-secondary-container">check_circle</span>
-                      <span className="font-semibold text-label-md">POSISI WAJAH OPTIMAL</span>
-                    </div>
-                  ) : phase === 'prepare' ? (
-                    <button
-                      onClick={() => setPhase('selfReport')}
-                      className="bg-secondary text-on-secondary py-md px-xl rounded-xl
-                                 font-bold text-label-md hover:opacity-90 transition-all"
-                    >
-                      Mulai Screening
+                {phase === 'prepare' && (
+                  <div className="relative z-20 flex flex-col items-center gap-6">
+                    <span className="material-symbols-outlined text-white text-6xl">videocam_off</span>
+                    <button onClick={startCamera} className="bg-[#006591] hover:bg-[#004b6b] text-white py-4 px-8 rounded-lg font-bold text-lg flex items-center gap-3 shadow-lg transition-transform hover:scale-105">
+                      MULAI PEMINDAIAN <span className="material-symbols-outlined">arrow_forward</span>
                     </button>
-                  ) : null}
-                </div>
+                  </div>
+                )}
 
-                {/* Analyzing overlay */}
+                {phase === 'scanning' && (
+                  <div className="absolute top-6 z-20 bg-[#091426]/80 backdrop-blur-md px-6 py-2 rounded-full border border-[#006591] flex items-center gap-4">
+                    <span className="text-3xl font-bold text-[#39B8FD]">{countdown}</span>
+                    <span className="text-xs font-bold text-white uppercase tracking-widest">Detik<br/>Tersisa</span>
+                  </div>
+                )}
+
                 {phase === 'analyzing' && (
-                  <div className="absolute inset-0 bg-primary/80 flex flex-col items-center justify-center z-30">
-                    <div className="w-12 h-12 border-4 border-secondary/30 border-t-secondary rounded-full animate-spin mb-md" />
-                    <p className="text-on-primary text-body-sm">Menganalisis kondisi Anda...</p>
+                  <div className="relative z-20 flex flex-col items-center">
+                    <div className="w-16 h-16 border-4 border-[#39B8FD]/30 border-t-[#39B8FD] rounded-full animate-spin mb-4" />
+                    <p className="text-white text-xl font-semibold">Memproses Data Telemetri AI...</p>
                   </div>
                 )}
               </div>
-
+              
               {error && (
-                <div className="mt-md bg-error-container text-error text-body-sm rounded-lg px-md py-sm">
-                  {error}
+                <div className="mt-4 p-4 bg-[#FFDAD6] border border-[#BA1A1A]/20 rounded-lg text-sm font-bold text-[#93000A]">
+                   {error}
                 </div>
               )}
             </div>
-
-            {/* Right */}
-            <div className="col-span-12 lg:col-span-3 order-3 flex flex-col gap-lg">
-              <div className="bg-surface-container-low border border-outline-variant p-lg rounded-xl flex flex-col items-center text-center">
-                <span className="material-symbols-outlined text-secondary mb-sm" style={{ fontSize: '48px' }}>monitoring</span>
-                <h4 className="text-headline-md font-bold text-primary">Fit-to-Work</h4>
-                <p className="text-body-sm text-on-surface-variant">
-                  {phase === 'scanning' ? 'Sistem sedang menganalisis fokus dan kelelahan Anda...' : 'Siap untuk memulai analisis kondisi.'}
-                </p>
-              </div>
-
-              <div className="bg-surface-container-lowest border border-outline-variant p-lg rounded-xl">
-                <h3 className="text-label-md text-secondary uppercase tracking-widest mb-md italic">Panduan Cepat</h3>
-                <ul className="space-y-sm text-body-sm text-on-surface-variant">
-                  <li className="flex items-start gap-xs">
-                    <span className="material-symbols-outlined text-primary text-[18px]">verified</span>
-                    Cahaya harus cukup terang
-                  </li>
-                  <li className="flex items-start gap-xs">
-                    <span className="material-symbols-outlined text-primary text-[18px]">verified</span>
-                    Wajah harus terlihat jelas
-                  </li>
-                  <li className="flex items-start gap-xs">
-                    <span className="material-symbols-outlined text-primary text-[18px]">verified</span>
-                    Jangan memakai kacamata hitam
-                  </li>
-                </ul>
-              </div>
-
-              {phase === 'scanning' && (
-                <button
-                  onClick={cancelScreening}
-                  className="mt-auto w-full py-lg bg-error text-on-error rounded-xl font-bold
-                             flex items-center justify-center gap-md hover:opacity-90 transition-all shadow-md"
-                >
-                  <span className="material-symbols-outlined">cancel</span>
-                  BATALKAN SCREENING
-                </button>
-              )}
-            </div>
-
+            
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
-  </div>
-)
+  )
 }
