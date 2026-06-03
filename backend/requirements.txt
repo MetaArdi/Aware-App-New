@@ -9,7 +9,7 @@ pydantic[email]
 email-validator
 httpx
 python-dotenv
-tensorflow-cpu==2.15.0
+tensorflow-cpu
 protobuf==3.20.3
 numpy
 opencv-python-headless
