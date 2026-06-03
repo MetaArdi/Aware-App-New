@@ -5,7 +5,7 @@ import tensorflow as tf
 from PIL import Image
 from typing import List, Optional, Dict
 import mediapipe as mp
-from mediapipe.python.solutions import face_mesh as mp_face_mesh
+mp_face_mesh = mp.solutions.face_mesh
 
 class ModelService:
     def __init__(self, model_path: str):
