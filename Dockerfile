@@ -35,6 +35,9 @@ COPY --chown=user:user model/ ./model/
 # Set working directory to where main.py is located
 WORKDIR /app/backend
 
+# Set Protobuf to Python implementation to avoid C++ MemoryError/Conflicts between TF and MediaPipe
+ENV PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
+
 # Hugging Face exposes port 7860
 ENV PORT=7860
 EXPOSE 7860
