@@ -3,6 +3,11 @@ FROM python:3.10-slim
 # Install system dependencies (for OpenCV and MediaPipe)
 RUN apt-get update && apt-get install -y \
     libglib2.0-0 \
+    libxcb1 \
+    libgl1 \
+    libsm6 \
+    libxext6 \
+    libxrender1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Create user with UID 1000 (Hugging Face Spaces requirement)
