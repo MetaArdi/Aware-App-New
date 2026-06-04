@@ -16,13 +16,13 @@ export default function Screening() {
   const intervalRef = useRef(null)
   const timerRef = useRef(null)
   
-  const [phase, setPhase] = useState('prepare')
+  const [phase, setPhase] = useState('selfReport')
   const [countdown, setCountdown] = useState(SCREENING_DURATION)
   const [frames, setFrames] = useState([])
   const [selfReport, setSelfReport] = useState({ sleep_hours: 7, energy_level: 3, physical_complaints: '' })
   const [error, setError] = useState('')
   const [result, setResult] = useState(null)
-  const [liveMetrics, setLiveMetrics] = useState({ ear: 0.32, yawn: false })
+  const [liveMetrics, setLiveMetrics] = useState({ ear: 0.32, mar: 0.15, yawn: false })
 
   // Fungsi untuk menangkap frame Base64
   const captureFrame = useCallback(() => {
@@ -34,7 +34,7 @@ export default function Screening() {
     canvas.getContext('2d').drawImage(video, 0, 0)
     const dataUrl = canvas.toDataURL('image/jpeg', 0.7)
     
-    setLiveMetrics({ ear: (0.30 + Math.random() * 0.05).toFixed(2), yawn: Math.random() > 0.85 })
+    setLiveMetrics({ ear: (0.30 + Math.random() * 0.05).toFixed(2), mar: (0.10 + Math.random() * 0.05).toFixed(2), yawn: Math.random() > 0.85 })
     setFrames(prev => [...prev, dataUrl])
   }, [])
 
@@ -130,6 +130,10 @@ export default function Screening() {
                       <span className="text-[#0B1C30] font-medium">EAR</span>
                       <span className="text-2xl font-semibold text-[#006591]">{liveMetrics.ear}</span>
                     </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[#0B1C30] font-medium">MAR</span>
+                      <span className="text-2xl font-semibold text-[#006591]">{liveMetrics.mar}</span>
+                    </div>
                   </div>
                   <button onClick={() => { stopCamera(); setPhase('prepare') }} className="h-12 border border-[#BA1A1A] rounded-lg flex justify-center items-center gap-2 text-[#BA1A1A] font-semibold hover:bg-red-50">
                     BATALKAN
@@ -138,42 +142,67 @@ export default function Screening() {
               )}
             </div>
 
-            {/* Center Area: Camera */}
+            {/* Center Area */}
             <div className="col-span-12 lg:col-span-8 xl:col-span-9 order-1 lg:order-2">
-              <div className="relative w-full h-[500px] lg:h-[600px] bg-[#1E293B] border-[4px] border-[#DCE9FF] rounded-3xl shadow-xl overflow-hidden flex flex-col justify-center items-center">
-                
-                {phase !== 'scanning' && <div className="absolute inset-0 bg-[#091426]/60 backdrop-blur-sm z-10" />}
-                <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover scale-x-[-1]" style={{ display: phase === 'scanning' ? 'block' : 'none' }} />
-
-                {phase === 'scanning' && (
-                  <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-                     <div className="w-[60%] h-[70%] border-[3px] border-[#39B8FD] rounded-[40px] shadow-[0_0_0_2000px_rgba(9,20,38,0.7)]" />
+              
+              {phase === 'selfReport' && (
+                <div className="w-full bg-white border border-[#C5C6CD] rounded-3xl shadow-xl p-6 lg:p-10">
+                  <div className="flex items-center gap-4 mb-8">
+                    <span className="material-symbols-outlined text-[#006591] text-4xl">vital_signs</span>
+                    <div>
+                      <h2 className="text-2xl font-bold text-[#091426]">Self-Report (Laporan Diri)</h2>
+                      <p className="text-[#45474C] text-sm">Lengkapi data kondisi fisik Anda sebelum memulai pemindaian kamera.</p>
+                    </div>
                   </div>
-                )}
-
-                {phase === 'prepare' && (
-                  <div className="relative z-20 flex flex-col items-center gap-6">
-                    <span className="material-symbols-outlined text-white text-6xl">videocam_off</span>
-                    <button onClick={startCamera} className="bg-[#006591] hover:bg-[#004b6b] text-white py-4 px-8 rounded-lg font-bold text-lg flex items-center gap-3 shadow-lg transition-transform hover:scale-105">
-                      MULAI PEMINDAIAN <span className="material-symbols-outlined">arrow_forward</span>
+                  <SelfReportForm data={selfReport} onChange={setSelfReport} />
+                  <div className="mt-8 flex justify-end">
+                    <button onClick={() => setPhase('prepare')} className="bg-[#006591] hover:bg-[#004b6b] text-white py-3 px-8 rounded-full font-bold text-lg flex items-center gap-3 shadow-md transition-transform hover:scale-105">
+                      LANJUTKAN KE KAMERA <span className="material-symbols-outlined">arrow_forward</span>
                     </button>
                   </div>
-                )}
+                </div>
+              )}
 
-                {phase === 'scanning' && (
-                  <div className="absolute top-6 z-20 bg-[#091426]/80 backdrop-blur-md px-6 py-2 rounded-full border border-[#006591] flex items-center gap-4">
-                    <span className="text-3xl font-bold text-[#39B8FD]">{countdown}</span>
-                    <span className="text-xs font-bold text-white uppercase tracking-widest">Detik<br/>Tersisa</span>
-                  </div>
-                )}
+              {phase !== 'selfReport' && (
+                <div className="relative w-full h-[500px] lg:h-[600px] bg-[#1E293B] border-[4px] border-[#DCE9FF] rounded-3xl shadow-xl overflow-hidden flex flex-col justify-center items-center">
+                  
+                  {phase !== 'scanning' && <div className="absolute inset-0 bg-[#091426]/60 backdrop-blur-sm z-10" />}
+                  <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover scale-x-[-1]" style={{ display: phase === 'scanning' ? 'block' : 'none' }} />
 
-                {phase === 'analyzing' && (
-                  <div className="relative z-20 flex flex-col items-center">
-                    <div className="w-16 h-16 border-4 border-[#39B8FD]/30 border-t-[#39B8FD] rounded-full animate-spin mb-4" />
-                    <p className="text-white text-xl font-semibold">Memproses Data Telemetri AI...</p>
-                  </div>
-                )}
-              </div>
+                  {phase === 'scanning' && (
+                    <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+                       <div className="relative w-[60%] h-[70%] border-[3px] border-[#39B8FD] rounded-[40px] shadow-[0_0_0_2000px_rgba(9,20,38,0.7)] overflow-hidden">
+                         <div className="absolute left-0 right-0 h-[2px] bg-[#39B8FD] shadow-[0_0_15px_3px_#39B8FD] animate-laser-scan" />
+                         <div className="absolute inset-0 bg-[linear-gradient(rgba(57,184,253,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(57,184,253,0.1)_1px,transparent_1px)] bg-[size:20px_20px]" />
+                       </div>
+                    </div>
+                  )}
+
+                  {phase === 'prepare' && (
+                    <div className="relative z-20 flex flex-col items-center gap-6">
+                      <span className="material-symbols-outlined text-white text-6xl">videocam_off</span>
+                      <button onClick={startCamera} className="bg-[#006591] hover:bg-[#004b6b] text-white py-4 px-8 rounded-lg font-bold text-lg flex items-center gap-3 shadow-lg transition-transform hover:scale-105">
+                        MULAI PEMINDAIAN <span className="material-symbols-outlined">arrow_forward</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {phase === 'scanning' && (
+                    <div className="absolute top-6 z-20 bg-[#091426]/80 backdrop-blur-md px-6 py-2 rounded-full border border-[#006591] flex items-center gap-4">
+                      <span className="text-3xl font-bold text-[#39B8FD]">{countdown}</span>
+                      <span className="text-xs font-bold text-white uppercase tracking-widest">Detik<br/>Tersisa</span>
+                    </div>
+                  )}
+
+                  {phase === 'analyzing' && (
+                    <div className="relative z-20 flex flex-col items-center">
+                      <div className="w-16 h-16 border-4 border-[#39B8FD]/30 border-t-[#39B8FD] rounded-full animate-spin mb-4" />
+                      <p className="text-white text-xl font-semibold">Memproses Data Telemetri AI...</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               
               {error && (
                 <div className="mt-4 p-4 bg-[#FFDAD6] border border-[#BA1A1A]/20 rounded-lg text-sm font-bold text-[#93000A]">

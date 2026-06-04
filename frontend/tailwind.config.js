@@ -90,6 +90,15 @@ export default {
         'headline-lg':       ['32px', { lineHeight:'40px', letterSpacing:'-0.01em', fontWeight:'600' }],
         'body-sm':           ['14px', { lineHeight:'20px', fontWeight:'400' }],
       },
+      keyframes: {
+        'laser-scan': {
+          '0%, 100%': { top: '0%' },
+          '50%': { top: '100%' }
+        }
+      },
+      animation: {
+        'laser-scan': 'laser-scan 3s ease-in-out infinite'
+      },
     },
   },
   plugins: [],
