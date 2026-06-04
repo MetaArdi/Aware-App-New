@@ -1,0 +1,17 @@
+export default async function handler(req, res) {
+  try {
+    // URL Backend Hugging Face
+    const backendUrl = process.env.VITE_API_URL || 'https://mranxious-aware-backend.hf.space/';
+    
+    // Melakukan request (ping) ke backend untuk mencegah mode sleep
+    const response = await fetch(backendUrl);
+    
+    if (response.ok) {
+      res.status(200).json({ status: 'awake', message: 'Hugging Face backend is awake!' });
+    } else {
+      res.status(response.status).json({ status: 'error', message: 'Backend reachable but returned error' });
+    }
+  } catch (error) {
+    res.status(500).json({ status: 'failed', error: error.message });
+  }
+}
