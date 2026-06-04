@@ -7,7 +7,7 @@ import SelfReportForm from '../components/Screening/SelfReportForm'
 import api from '../api/axios'
 
 const CAPTURE_INTERVAL_MS = 3000
-const SCREENING_DURATION = 30
+const SCREENING_DURATION = 15
 
 export default function Screening() {
   const { user } = useAuth()
