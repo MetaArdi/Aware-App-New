@@ -42,5 +42,5 @@ ENV PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
 ENV PORT=7860
 EXPOSE 7860
 
-# Command to run the FastAPI app
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
+# Command to run the database initialization script and then the FastAPI app
+CMD python init_db.py && uvicorn main:app --host 0.0.0.0 --port 7860
